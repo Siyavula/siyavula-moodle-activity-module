@@ -78,14 +78,15 @@ class mod_siyavula_mod_form extends moodleform_mod {
             $subject = $info[0];
             $grades = explode(',', $info[1]);
             foreach($grades as $grade) {
-                $radio_subject[] = $mform->createElement('radio', 'subject_grade_selected', '', get_string('grade') . " $grade", "$subject:$grade");
+                $radio_subject[] = $mform->createElement('radio', 'subject_grade_selected', '', get_string('grade', 'mod_siyavula') . " $grade", "$subject:$grade");
             }
             $mform->addGroup($radio_subject, 'radioar', ucfirst($subject), array('<br/>'), false);
 
         }
         // Add here custom grade
-        $mform->addElement('header', 'title_select_grade', get_string('grade'));
+        $mform->addElement('header', 'title_select_grade', get_string('grade', 'mod_siyavula'));
         $gradepassfieldname = 'gradepass';
+        $gradefieldname = '';
         $mform->addElement('text', $gradepassfieldname, get_string($gradepassfieldname, 'grades'));
         $mform->addHelpButton($gradepassfieldname, $gradepassfieldname, 'grades');
         $mform->setDefault($gradepassfieldname, '');

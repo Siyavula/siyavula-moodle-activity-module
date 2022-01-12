@@ -32,3 +32,7 @@ $string['subject_setting'] = 'Subjects and grades';
 $string['subject_setting_desc'] = 'Each new line is subject with grades. The format is: "subject_name:numeric_grades_separated_by_commas"';
 $string['title_select_subject'] = 'Grade and subject';
 $string['desc_select_subject'] = 'Select the grade correspondig to the subject to show';
+$string['modulenameplural'] = 'Siyavula Toc';
+$string['pluginadministration'] = 'Siyavula Toc';
+$string['siyavulaname_help'] = 'Siyavula Toc Question';
+$string['grade'] = 'Grade Toc';
