@@ -32,7 +32,7 @@ if ($hassiteconfig) {
             'mod_siyavula/grades_subjects',
             get_string('subject_setting', 'mod_siyavula'),
             get_string('subject_setting_desc', 'mod_siyavula'),
-            'math:8,9,10,11,12'
+            'maths:8,9,10,11,12'
         ));
     }
 }
