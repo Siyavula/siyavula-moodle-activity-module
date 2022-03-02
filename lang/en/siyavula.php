@@ -34,5 +34,5 @@ $string['title_select_subject'] = 'Grade and subject';
 $string['desc_select_subject'] = 'Select the grade correspondig to the subject to show';
 $string['modulenameplural'] = 'Siyavula Toc';
 $string['pluginadministration'] = 'Siyavula Toc';
-$string['siyavulaname_help'] = 'Siyavula Toc Question';
+$string['modulename_help'] = 'Siyavula Toc Question';;
 $string['grade'] = 'Grade Toc';
