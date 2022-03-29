@@ -32,6 +32,8 @@ $s = optional_param('s', 0, PARAM_INT);
 
 // Section id selected
 $section_id = optional_param('sid', null, PARAM_INT);
+$aid        = optional_param('aid', null, PARAM_RAW);
+$rid        = optional_param('rid', null, PARAM_RAW);
 
 if ($id) {
     $cm = get_coursemodule_from_id('siyavula', $id, 0, false, MUST_EXIST);
@@ -69,6 +71,7 @@ $subject    = $info[0];
 $grade      = $info[1];
 $client_ip          = $_SERVER['REMOTE_ADDR'];
 $siyavula_config    = get_config('filter_siyavula');
+$baseurl            = $siyavula_config->url_base;
 $token              = siyavula_get_user_token($siyavula_config, $client_ip);
 $subject_grade_toc  = get_subject_grade_toc($subject, $grade, $token);
 // If selected one grade
@@ -108,23 +111,43 @@ if($moduleinstance->subject_grade_selected && $section_id == null) {
   echo html_writer::end_tag('div');
   echo html_writer::end_tag('div');
 }
+
 // If selected one section, render it
-if($section_id != null) {
+if($section_id != null && $aid === NULL && $rid === NULL) {
   siyavula_update_grades($moduleinstance, $USER->id, $subject_grade_toc);
   $user_token = siyavula_get_external_user_token($siyavula_config, $client_ip, $token);
-  $url = new moodle_url('/mod/siyavula/view.php', ['id' => $cm->id]);
-  $templatecontext[] = [
-    'section_id'  => $section_id,
-    'user_token'  => $user_token->token,
-    'token'       => $token,
-    'baseUrl'     => $siyavula_config->url_base,
-    'randomSeed'  => random_int(1000, 9999),
-    'back_url'    => $url,
-  ];
   
-  echo '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?config=TeX-MML-AM_HTMLorMML-full"></script>'; // This line avoid "[Math Error]" appear in the rendered question (i think)
-  // Renderizar el html
-  echo $OUTPUT->render_from_template('mod_siyavula/practice_section', ["renderall" => $templatecontext]);
+  $questionapi = get_activity_practice_toc($section_id,$token, $user_token->token,$baseurl);
+  $activityid  = $questionapi->activity->id;
+  $responseid  = $questionapi->response->id;
+  $idqt   = $questionapi->practice->section->id;
+  $seedqt = $questionapi->response->random_seed;
+  
+
+  $htmlpractice = get_html_question_practice_toc($questionapi->response->question_html,$questionapi->practice->chapter->title,$questionapi->practice->chapter->mastery,$questionapi->practice->section->title,$questionapi->practice->section->mastery);
+  echo $htmlpractice;
+  $PAGE->requires->js_call_amd('mod_siyavula/externalpractice', 'init', [$baseurl,$token,$user_token->token,$activityid,$responseid,$idqt,$seedqt]);
+}
+
+if($aid != NULL  && $rid != NULL){
+  $idqt = '';
+  $user_token = siyavula_get_external_user_token($siyavula_config, $client_ip, $token);
+  //Get html retry question
+  $retryhtml = retry_question_html($aid,$rid,$token,$user_token->token,$baseurl);
+  
+  $questionapi = get_activity_practice_toc($section_id,$token, $user_token->token,$baseurl);
+
+  $activityid  = $retryhtml->activity->id;
+  $responseid  = $retryhtml->response->id;
+  if(isset($retryhtml->practice->section->id)){
+    $idqt   = $retryhtml->practice->section->id;
+  }
+  
+  $seedqt = $retryhtml->response->random_seed;
+  
+  $htmlpractice = get_html_question_practice_toc($retryhtml->response->question_html,$questionapi->practice->chapter->title,$questionapi->practice->chapter->mastery,$questionapi->practice->section->title,$questionapi->practice->section->mastery);
+  echo $htmlpractice;
+  $PAGE->requires->js_call_amd('mod_siyavula/externalpractice', 'init', [$baseurl,$token,$user_token->token,$activityid,$responseid,$idqt,$seedqt]);
 }
 
 echo $OUTPUT->footer();

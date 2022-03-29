@@ -364,3 +364,156 @@ function get_subject_grade_toc($subject, $grade, $token, $userid = 0) {
         return $response;
     }
 }
+
+//Html render practice session
+function get_activity_practice_toc($questionid, $token, $external_token, $baseurl){
+    global $USER, $CFG;
+
+    $data = array(
+        'template_id' => intval($questionid), 
+    );
+    
+    $payload = json_encode($data);
+    
+    $curl = curl_init();
+    
+    curl_setopt_array($curl, array(
+      CURLOPT_URL => $baseurl.'api/siyavula/v1/activity/create/practice/'.$questionid.'',
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_ENCODING => "",
+      CURLOPT_MAXREDIRS => 10,
+      CURLOPT_TIMEOUT => 0,
+      CURLOPT_FOLLOWLOCATION => true,
+      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+      CURLOPT_CUSTOMREQUEST => "POST",
+      CURLOPT_POSTFIELDS => $payload,
+      CURLOPT_HTTPHEADER => array('JWT: ' .$token, 'Authorization: JWT ' .$external_token),
+    ));
+   
+    $response = curl_exec($curl);
+    $response = json_decode($response);
+
+    $question_html = $response->response->question_html;
+    $new_question_html = '';
+    $new_question_html .= '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?id=2&config=TeX-MML-AM_HTMLorMML-full"></script>'; // Para cargar el MathJax
+
+    $new_question_html .= $question_html;
+        
+    $response->response->question_html = $new_question_html;
+    
+    curl_close($curl);
+
+    return $response;
+}
+
+function get_html_question_practice_toc($questionapi, $questionchaptertitle,$questionchaptermastery,$questionsectiontitle,$questionmastery){
+    global $CFG, $DB;
+    
+    //Enabled mathjax loader 
+    $siyavula_config = get_config('filter_siyavula');
+    
+    $to_render_pr = '';
+    
+    if($siyavula_config->mathjax == 1){
+       $to_render  = '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?config=TeX-MML-AM_HTMLorMML-full"></script>';
+    }
+    
+    $to_render_pr .= '<link rel="stylesheet" href="https://www.siyavula.com/static/themes/emas/siyavula-api/siyavula-api.min.css"/>';
+    $to_render_pr .= '<link rel="stylesheet" href="https://www.siyavula.com/static/themes/emas/question-api/question-api.min.css"/>';
+    $to_render_pr .= '<link rel="stylesheet" href="'.$CFG->wwwroot.'/filter/siyavula/styles/general.css"/>';
+    
+    $to_render_pr .= '<main class="sv-region-main emas sv practice-section-question">
+                      <div class="item-psq question">
+                        <div id="monassis" class="monassis monassis--practice monassis--maths monassis--siyavula-api">
+                          <div class="question-wrapper">
+                            <div class="question-content">
+                            '.$questionapi.'
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="item-psq">
+                        
+                        <div class="sv-panel-wrapper sv-panel-wrapper--toc">
+                        <div class="sv-panel sv-panel--dashboard sv-panel--toc sv-panel--toc-modern no-secondary-section">
+                          <div class="sv-panel__header">
+                            <div class="sv-panel__title">
+                              Busy practising
+                            </div>
+                          </div>
+                          <div class="sv-panel__section sv-panel__section--primary" id="mini-dashboard-toc-primary">
+                            <div class="sv-panel__section-header">
+                              <div class="sv-panel__section-title">This exercise is from:</div>
+                            </div>
+                            <div class="sv-panel__section-body">
+                              <div class="sv-toc sv-toc--dashboard-mastery-primary">
+                                <ul class="sv-toc__chapters">
+                                  <li class="sv-toc__chapter">
+                                    <div class="sv-toc__chapter-header">
+                                      <div class="sv-toc__chapter-title"><span id="chapter-mastery-title">'.$questionchaptertitle.'</span></div>
+                                      <div class="sv-toc__chapter-mastery">
+                                        <div class="sv-toc__section-mastery">
+                                          <progress class="progress" id="chapter-mastery" value="'.round($questionchaptermastery).'" max="100" data-text="'.round($questionchaptermastery).'%"></progress>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="sv-toc__chapter-body">
+                                      <ul class="sv-toc__sections">
+                                          <li class="sv-toc__section ">
+                                            <div class="sv-toc__section-header">
+                                              <div class="sv-toc__section-title">
+                                                <span id="section-mastery-title">'.$questionsectiontitle.'</span>
+                                              </div>
+                                              <div class="sv-toc__section-mastery">
+                                                <progress class="progress" id="section-mastery" value="'.round($questionmastery).'" max="100" data-text="'.round($questionmastery).'%"></progress><br>
+                                              </div>
+                                            </div>
+                                          </li>
+                                      </ul>
+                                    </div>
+                                  </li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </main>';
+                    
+    return $to_render_pr;
+}
+
+
+//Html render practice session
+function retry_question_html($activityid, $responseid, $token, $external_token, $baseurl){
+    global $USER, $CFG;
+
+    $curl = curl_init();
+    
+    curl_setopt_array($curl, array(
+      CURLOPT_URL => $baseurl.'api/siyavula/v1/activity/'.$activityid.'/response/'.$responseid.'/retry',
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_ENCODING => "",
+      CURLOPT_MAXREDIRS => 10,
+      CURLOPT_TIMEOUT => 0,
+      CURLOPT_FOLLOWLOCATION => true,
+      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+      CURLOPT_CUSTOMREQUEST => "POST",
+      CURLOPT_HTTPHEADER => array('JWT: ' .$token, 'Authorization: JWT ' .$external_token),
+    ));
+   
+    $response = curl_exec($curl);
+    $response = json_decode($response);
+
+    $question_html = $response->response->question_html;
+    $new_question_html = '';
+    $new_question_html .= '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?id=2&config=TeX-MML-AM_HTMLorMML-full"></script>'; // Para cargar el MathJax
+
+    $new_question_html .= $question_html;
+        
+    $response->response->question_html = $new_question_html;
+
+    curl_close($curl);
+
+    return $response;
+}
