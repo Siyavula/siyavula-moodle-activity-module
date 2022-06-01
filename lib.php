@@ -76,7 +76,6 @@ function siyavula_update_instance($moduleinstance, $mform = null) {
 
     $moduleinstance->timemodified = time();
     $moduleinstance->id = $moduleinstance->instance;
-    // print_object($moduleinstance);die('test');
     return $DB->update_record('siyavula', $moduleinstance);
 }
 
@@ -148,42 +147,29 @@ function siyavula_scale_used_anywhere($scaleid) {
  */
 function siyavula_grade_item_update($moduleinstance, $mastery) {
     global $CFG, $DB;
-    if (!function_exists('grade_update')) { // workaround for buggy PHP versions
+    if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
         require_once($CFG->libdir.'/gradelib.php');
     }
 
     $params = array('itemname' => $moduleinstance->name, 'idnumber' => $moduleinstance->id);
 
-    /*if (!$moduleinstance->assessed or $moduleinstance->scale == 0) {
-        $params['gradetype'] = GRADE_TYPE_NONE;
-
-    } else if ($moduleinstance->scale > 0) {
-        $params['gradetype'] = GRADE_TYPE_VALUE;
-        $params['grademax']  = $moduleinstance->scale;
-        $params['grademin']  = 0;
-
-    } else if ($moduleinstance->scale < 0) {
-        $params['gradetype'] = GRADE_TYPE_SCALE;
-        $params['scaleid']   = -$moduleinstance->scale;
-    }*/
-
     if ($mastery === 'reset') {
         $params['reset'] = true;
         $mastery = null;
     }
-    $params['gradetype'] = GRADE_TYPE_VALUE; // If is type_none, then not saved nothing, so left for now VALUE
+    $params['gradetype'] = GRADE_TYPE_VALUE; // If is type_none, then not saved nothing, so left for now VALUE.
 
     $siyavulagrades = 'siyavula_grades';
-    $record = $DB->get_record($siyavulagrades, ['subject' => $mastery->subject, 'grade' => $mastery->grade, 'userid' => $mastery->userid]);
+    $record = $DB->get_record($siyavulagrades, ['subject' => $mastery->subject,
+        'grade' => $mastery->grade, 'userid' => $mastery->userid]);
 
-    if($record) {
-        // If the record exist, update
+    if ($record) {
+        // If the record exist, update.
         $record->mastery = $mastery->rawgrade;
         $record->timemodified = time();
         $DB->update_record($siyavulagrades, $record);
-    }
-    else {
-        // If not exist, insert
+    } else {
+        // If not exist, insert.
         $record->subject      = $mastery->subject;
         $record->grade        = $mastery->grade;
         $record->userid       = $mastery->userid;
@@ -193,28 +179,6 @@ function siyavula_grade_item_update($moduleinstance, $mastery) {
         $DB->insert_record($siyavulagrades, $record);
     }
     return grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula', $moduleinstance->id, 0, $mastery, $params);
-    /*global $CFG;
-    require_once($CFG->libdir.'/gradelib.php');
-
-    $item = array();
-    $item['itemname'] = clean_param($moduleinstance->name, PARAM_NOTAGS);
-    $item['gradetype'] = GRADE_TYPE_VALUE;
-
-    if ($moduleinstance->grade > 0) {
-        $item['gradetype'] = GRADE_TYPE_VALUE;
-        $item['grademax']  = $moduleinstance->grade;
-        $item['grademin']  = 0;
-    } else if ($moduleinstance->grade < 0) {
-        $item['gradetype'] = GRADE_TYPE_SCALE;
-        $item['scaleid']   = -$moduleinstance->grade;
-    } else {
-        $item['gradetype'] = GRADE_TYPE_NONE;
-    }
-    if ($reset) {
-        $item['reset'] = true;
-    }
-
-    grade_update('/mod/siyavula', $moduleinstance->course, 'mod', 'mod_siyavula', $moduleinstance->id, 0, null, $item);*/
 }
 
 /**
@@ -240,12 +204,6 @@ function siyavula_grade_item_delete($moduleinstance) {
  * @param int $userid Update grade of specific user only, 0 means all participants.
  */
 function siyavula_update_grades($siyavula, $userid, $subjectgradetoc) {
-    /*global $CFG, $DB;
-    require_once($CFG->libdir.'/gradelib.php');
-    // Populate array of grade objects indexed by userid.
-    $grades = array();
-    grade_update('/mod/siyavula', $moduleinstance->course, 'mod', 'mod_siyavula', $moduleinstance->id, 0, $grades);*/
-
     global $CFG, $DB;
     require_once($CFG->libdir.'/gradelib.php');
 
@@ -271,24 +229,20 @@ function siyavula_set_completion($siyavula, $userid, $mastery = 0) {
     if (!$completion->is_enabled()) {
         return;
     }
+
     $cm = get_coursemodule_from_instance('siyavula', $siyavula->id, $siyavula->course);
     if (empty($cm) || !$completion->is_enabled($cm)) {
         return;
     }
-    if($cm->completion == COMPLETION_TRACKING_AUTOMATIC) {
-        // var_dump($mastery);
-        if($mastery > 0) {
-            if($mastery >= $siyavula->gradepass) { // COMPLETION_COMPLETE_PASS
-                // var_dump("COMPLETION_COMPLETE_PASS" . COMPLETION_COMPLETE_PASS);
+
+    if ($cm->completion == COMPLETION_TRACKING_AUTOMATIC) {
+        if ($mastery > 0) {
+            if ($mastery >= $siyavula->gradepass) { // COMPLETION_COMPLETE_PASS.
                 $completion->update_state($cm, COMPLETION_COMPLETE_PASS, $userid);
-            }
-            else { // COMPLETION_COMPLETE_FAIL
-                // var_dump("COMPLETION_COMPLETE_FAIL" . COMPLETION_COMPLETE_FAIL);
+            } else { // COMPLETION_COMPLETE_FAIL.
                 $completion->update_state($cm, COMPLETION_COMPLETE_FAIL, $userid);
             }
-        }
-        else {
-            // var_dump("COMPLETION_COMPLETE" . COMPLETION_COMPLETE);
+        } else {
             $completion->update_state($cm, COMPLETION_COMPLETE, $userid);
         }
     }
@@ -311,7 +265,7 @@ function siyavula_get_toc_user_mastery($moduleinstance, $subjectgradetoc, $useri
     $subject            = $info[0];
     $grade              = $info[1];
     $summastery = 0;
-    foreach($subjectgradetoc->chapters as $k => $chapter) {
+    foreach ($subjectgradetoc->chapters as $k => $chapter) {
         $summastery += $chapter->mastery;
     }
     $countchapters = count($subjectgradetoc->chapters);
@@ -334,10 +288,9 @@ function get_subject_grade_toc($subject, $grade, $token, $userid = 0) {
     $siyavulaconfig = get_config('filter_siyavula');
     $curl = curl_init();
 
-    if($userid == 0) {
+    if ($userid == 0) {
         $email = $USER->email;
-    }
-    else {
+    } else {
         $user = core_user::get_user($userid);
         $email = $user->email;
     }
@@ -358,14 +311,14 @@ function get_subject_grade_toc($subject, $grade, $token, $userid = 0) {
     $response = json_decode($response);
 
     curl_close($curl);
-    if(isset($response->errors)){
+    if (isset($response->errors)) {
         return $response->errors;
-    }else{
+    } else {
         return $response;
     }
 }
 
-// Html render practice session
+// Html render practice session.
 function get_activity_practice_toc($questionid, $token, $externaltoken, $baseurl) {
     global $USER, $CFG;
 
@@ -406,15 +359,16 @@ function get_activity_practice_toc($questionid, $token, $externaltoken, $baseurl
     return $response;
 }
 
-function get_html_question_practice_toc($questionapi, $questionchaptertitle, $questionchaptermastery, $questionsectiontitle, $questionmastery) {
+function get_html_question_practice_toc($questionapi, $questionchaptertitle,
+        $questionchaptermastery, $questionsectiontitle, $questionmastery) {
     global $CFG, $DB;
 
-    // Enabled mathjax loader
+    // Enabled mathjax loader.
     $siyavulaconfig = get_config('filter_siyavula');
 
     $torenderpr = '';
 
-    if($siyavulaconfig->mathjax == 1){
+    if ($siyavulaconfig->mathjax == 1) {
         $torender  = '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?config=TeX-MML-AM_HTMLorMML-full"></script>';
     }
 
@@ -450,10 +404,14 @@ function get_html_question_practice_toc($questionapi, $questionchaptertitle, $qu
                                 <ul class="sv-toc__chapters">
                                   <li class="sv-toc__chapter">
                                     <div class="sv-toc__chapter-header">
-                                      <div class="sv-toc__chapter-title"><span id="chapter-mastery-title">'.$questionchaptertitle.'</span></div>
+                                      <div class="sv-toc__chapter-title">
+                                        <span id="chapter-mastery-title">'.$questionchaptertitle.'</span></div>
                                       <div class="sv-toc__chapter-mastery">
                                         <div class="sv-toc__section-mastery">
-                                          <progress class="progress" id="chapter-mastery" value="'.round($questionchaptermastery).'" max="100" data-text="'.round($questionchaptermastery).'%"></progress>
+                                            <progress class="progress" id="chapter-mastery"
+                                                value="'.round($questionchaptermastery).'" max="100"
+                                                data-text="'.round($questionchaptermastery).'%">
+                                            </progress>
                                         </div>
                                       </div>
                                     </div>
@@ -465,7 +423,10 @@ function get_html_question_practice_toc($questionapi, $questionchaptertitle, $qu
                                                 <span id="section-mastery-title">'.$questionsectiontitle.'</span>
                                               </div>
                                               <div class="sv-toc__section-mastery">
-                                                <progress class="progress" id="section-mastery" value="'.round($questionmastery).'" max="100" data-text="'.round($questionmastery).'%"></progress><br>
+                                                <progress class="progress" id="section-mastery"
+                                                    value="'.round($questionmastery).'" max="100"
+                                                    data-text="'.round($questionmastery).'%">
+                                                </progress><br>
                                               </div>
                                             </div>
                                           </li>
@@ -484,7 +445,7 @@ function get_html_question_practice_toc($questionapi, $questionchaptertitle, $qu
 }
 
 
-// Html render practice session
+// Html render practice session.
 function retry_question_html($activityid, $responseid, $token, $externaltoken, $baseurl) {
     global $USER, $CFG;
 
