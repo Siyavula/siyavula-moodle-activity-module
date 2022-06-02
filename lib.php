@@ -76,7 +76,6 @@ function siyavula_update_instance($moduleinstance, $mform = null) {
 
     $moduleinstance->timemodified = time();
     $moduleinstance->id = $moduleinstance->instance;
-    //print_object($moduleinstance);die('test');
     return $DB->update_record('siyavula', $moduleinstance);
 }
 
@@ -148,73 +147,38 @@ function siyavula_scale_used_anywhere($scaleid) {
  */
 function siyavula_grade_item_update($moduleinstance, $mastery) {
     global $CFG, $DB;
-    if (!function_exists('grade_update')) { //workaround for buggy PHP versions
+    if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
         require_once($CFG->libdir.'/gradelib.php');
     }
 
-    $params = array('itemname'=>$moduleinstance->name, 'idnumber'=>$moduleinstance->id);
+    $params = array('itemname' => $moduleinstance->name, 'idnumber' => $moduleinstance->id);
 
-    /*if (!$moduleinstance->assessed or $moduleinstance->scale == 0) {
-        $params['gradetype'] = GRADE_TYPE_NONE;
-
-    } else if ($moduleinstance->scale > 0) {
-        $params['gradetype'] = GRADE_TYPE_VALUE;
-        $params['grademax']  = $moduleinstance->scale;
-        $params['grademin']  = 0;
-
-    } else if ($moduleinstance->scale < 0) {
-        $params['gradetype'] = GRADE_TYPE_SCALE;
-        $params['scaleid']   = -$moduleinstance->scale;
-    }*/
-
-    if ($mastery  === 'reset') {
+    if ($mastery === 'reset') {
         $params['reset'] = true;
-        $mastery = NULL;
+        $mastery = null;
     }
-    $params['gradetype'] = GRADE_TYPE_VALUE; // If is type_none, then not saved nothing, so left for now VALUE
+    $params['gradetype'] = GRADE_TYPE_VALUE; // If is type_none, then not saved nothing, so left for now VALUE.
 
-    $siyavula_grades = 'siyavula_grades';
-    $record = $DB->get_record($siyavula_grades, ['subject' => $mastery->subject, 'grade' => $mastery->grade, 'userid' => $mastery->userid]);
-    
-    if($record) {
-        // If the record exist, update
+    $siyavulagrades = 'siyavula_grades';
+    $record = $DB->get_record($siyavulagrades, ['subject' => $mastery->subject,
+        'grade' => $mastery->grade, 'userid' => $mastery->userid]);
+
+    if ($record) {
+        // If the record exist, update.
         $record->mastery = $mastery->rawgrade;
         $record->timemodified = time();
-        $DB->update_record($siyavula_grades, $record);
-    }
-    else {
-        // If not exist, insert
+        $DB->update_record($siyavulagrades, $record);
+    } else {
+        // If not exist, insert.
         $record->subject      = $mastery->subject;
         $record->grade        = $mastery->grade;
         $record->userid       = $mastery->userid;
         $record->mastery      = $mastery->rawgrade;
         $record->timemodified = time();
         $record->timecreated  = time();
-        $DB->insert_record($siyavula_grades, $record);
+        $DB->insert_record($siyavulagrades, $record);
     }
     return grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula', $moduleinstance->id, 0, $mastery, $params);
-    /*global $CFG;
-    require_once($CFG->libdir.'/gradelib.php');
-
-    $item = array();
-    $item['itemname'] = clean_param($moduleinstance->name, PARAM_NOTAGS);
-    $item['gradetype'] = GRADE_TYPE_VALUE;
-
-    if ($moduleinstance->grade > 0) {
-        $item['gradetype'] = GRADE_TYPE_VALUE;
-        $item['grademax']  = $moduleinstance->grade;
-        $item['grademin']  = 0;
-    } else if ($moduleinstance->grade < 0) {
-        $item['gradetype'] = GRADE_TYPE_SCALE;
-        $item['scaleid']   = -$moduleinstance->grade;
-    } else {
-        $item['gradetype'] = GRADE_TYPE_NONE;
-    }
-    if ($reset) {
-        $item['reset'] = true;
-    }
-
-    grade_update('/mod/siyavula', $moduleinstance->course, 'mod', 'mod_siyavula', $moduleinstance->id, 0, null, $item);*/
 }
 
 /**
@@ -239,17 +203,11 @@ function siyavula_grade_item_delete($moduleinstance) {
  * @param stdClass $moduleinstance Instance object with extra cmidnumber and modname property.
  * @param int $userid Update grade of specific user only, 0 means all participants.
  */
-function siyavula_update_grades($siyavula, $userid, $subject_grade_toc) {
-    /*global $CFG, $DB;
-    require_once($CFG->libdir.'/gradelib.php');
-    // Populate array of grade objects indexed by userid.
-    $grades = array();
-    grade_update('/mod/siyavula', $moduleinstance->course, 'mod', 'mod_siyavula', $moduleinstance->id, 0, $grades);*/
-    
+function siyavula_update_grades($siyavula, $userid, $subjectgradetoc) {
     global $CFG, $DB;
     require_once($CFG->libdir.'/gradelib.php');
 
-    $mastery = siyavula_get_toc_user_mastery($siyavula, $subject_grade_toc, $userid);
+    $mastery = siyavula_get_toc_user_mastery($siyavula, $subjectgradetoc, $userid);
     siyavula_set_completion($siyavula, $userid, $mastery->rawgrade);
     return siyavula_grade_item_update($siyavula, $mastery);
 }
@@ -271,28 +229,24 @@ function siyavula_set_completion($siyavula, $userid, $mastery = 0) {
     if (!$completion->is_enabled()) {
         return;
     }
+
     $cm = get_coursemodule_from_instance('siyavula', $siyavula->id, $siyavula->course);
     if (empty($cm) || !$completion->is_enabled($cm)) {
         return;
     }
-    if($cm->completion == COMPLETION_TRACKING_AUTOMATIC) {
-        //var_dump($mastery);
-        if($mastery > 0) {
-            if($mastery >= $siyavula->gradepass) { // COMPLETION_COMPLETE_PASS
-        //var_dump("COMPLETION_COMPLETE_PASS" . COMPLETION_COMPLETE_PASS);
+
+    if ($cm->completion == COMPLETION_TRACKING_AUTOMATIC) {
+        if ($mastery > 0) {
+            if ($mastery >= $siyavula->gradepass) { // COMPLETION_COMPLETE_PASS.
                 $completion->update_state($cm, COMPLETION_COMPLETE_PASS, $userid);
-            }
-            else { // COMPLETION_COMPLETE_FAIL
-        //var_dump("COMPLETION_COMPLETE_FAIL" . COMPLETION_COMPLETE_FAIL);
+            } else { // COMPLETION_COMPLETE_FAIL.
                 $completion->update_state($cm, COMPLETION_COMPLETE_FAIL, $userid);
             }
-        }
-        else {
-        //var_dump("COMPLETION_COMPLETE" . COMPLETION_COMPLETE);
+        } else {
             $completion->update_state($cm, COMPLETION_COMPLETE, $userid);
         }
     }
-    
+
 }
 
 /**
@@ -304,24 +258,24 @@ function siyavula_set_completion($siyavula, $userid, $mastery = 0) {
  * @param int $userid optional user id, 0 means all users
  * @return array array of grades, false if none
  */
-function siyavula_get_toc_user_mastery($moduleinstance, $subject_grade_toc, $userid) {
+function siyavula_get_toc_user_mastery($moduleinstance, $subjectgradetoc, $userid) {
     global $CFG, $DB;
 
     $info               = explode(':', $moduleinstance->subject_grade_selected);
     $subject            = $info[0];
     $grade              = $info[1];
-    $sum_mastery = 0;
-    foreach($subject_grade_toc->chapters as $k => $chapter) {
-        $sum_mastery += $chapter->mastery;
+    $summastery = 0;
+    foreach ($subjectgradetoc->chapters as $k => $chapter) {
+        $summastery += $chapter->mastery;
     }
-    $count_chapters = count($subject_grade_toc->chapters);
-    $total_grade = $sum_mastery / $count_chapters;
-    
+    $countchapters = count($subjectgradetoc->chapters);
+    $totalgrade = $summastery / $countchapters;
+
     $mastery = new stdClass();
     $mastery->userid   = $userid;
     $mastery->grade    = $grade;
     $mastery->subject  = $subject;
-    $mastery->rawgrade = $total_grade;
+    $mastery->rawgrade = $totalgrade;
     return $mastery;
 }
 
@@ -331,19 +285,18 @@ function siyavula_get_toc_user_mastery($moduleinstance, $subject_grade_toc, $use
 function get_subject_grade_toc($subject, $grade, $token, $userid = 0) {
     global $USER;
 
-    $siyavula_config = get_config('filter_siyavula');
+    $siyavulaconfig = get_config('filter_siyavula');
     $curl = curl_init();
 
-    if($userid == 0) {
+    if ($userid == 0) {
         $email = $USER->email;
-    }
-    else {
+    } else {
         $user = core_user::get_user($userid);
         $email = $user->email;
     }
-    
+
     curl_setopt_array($curl, array(
-      CURLOPT_URL => $siyavula_config->url_base."api/siyavula/v1/toc/user/$email/subject/$subject/grade/$grade",
+      CURLOPT_URL => $siyavulaconfig->url_base."api/siyavula/v1/toc/user/$email/subject/$subject/grade/$grade",
       CURLOPT_RETURNTRANSFER => true,
       CURLOPT_ENCODING => "",
       CURLOPT_MAXREDIRS => 10,
@@ -353,30 +306,30 @@ function get_subject_grade_toc($subject, $grade, $token, $userid = 0) {
       CURLOPT_CUSTOMREQUEST => "GET",
       CURLOPT_HTTPHEADER => array('JWT: '.$token),
     ));
-    
+
     $response = curl_exec($curl);
     $response = json_decode($response);
-    
+
     curl_close($curl);
-    if(isset($response->errors)){
+    if (isset($response->errors)) {
         return $response->errors;
-    }else{
+    } else {
         return $response;
     }
 }
 
-//Html render practice session
-function get_activity_practice_toc($questionid, $token, $external_token, $baseurl){
+// Html render practice session.
+function get_activity_practice_toc($questionid, $token, $externaltoken, $baseurl) {
     global $USER, $CFG;
 
     $data = array(
-        'template_id' => intval($questionid), 
+        'template_id' => intval($questionid),
     );
-    
+
     $payload = json_encode($data);
-    
+
     $curl = curl_init();
-    
+
     curl_setopt_array($curl, array(
       CURLOPT_URL => $baseurl.'api/siyavula/v1/activity/create/practice/'.$questionid.'',
       CURLOPT_RETURNTRANSFER => true,
@@ -387,42 +340,43 @@ function get_activity_practice_toc($questionid, $token, $external_token, $baseur
       CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
       CURLOPT_CUSTOMREQUEST => "POST",
       CURLOPT_POSTFIELDS => $payload,
-      CURLOPT_HTTPHEADER => array('JWT: ' .$token, 'Authorization: JWT ' .$external_token),
+      CURLOPT_HTTPHEADER => array('JWT: ' .$token, 'Authorization: JWT ' .$externaltoken),
     ));
-   
+
     $response = curl_exec($curl);
     $response = json_decode($response);
 
-    $question_html = $response->response->question_html;
-    $new_question_html = '';
-    $new_question_html .= '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?id=2&config=TeX-MML-AM_HTMLorMML-full"></script>'; // Para cargar el MathJax
+    $questionhtml = $response->response->question_html;
+    $newquestionhtml = '';
+    $newquestionhtml .= '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?id=2&config=TeX-MML-AM_HTMLorMML-full"></script>'; // Para cargar el MathJax
 
-    $new_question_html .= $question_html;
-        
-    $response->response->question_html = $new_question_html;
-    
+    $newquestionhtml .= $questionhtml;
+
+    $response->response->question_html = $newquestionhtml;
+
     curl_close($curl);
 
     return $response;
 }
 
-function get_html_question_practice_toc($questionapi, $questionchaptertitle,$questionchaptermastery,$questionsectiontitle,$questionmastery){
+function get_html_question_practice_toc($questionapi, $questionchaptertitle,
+        $questionchaptermastery, $questionsectiontitle, $questionmastery) {
     global $CFG, $DB;
-    
-    //Enabled mathjax loader 
-    $siyavula_config = get_config('filter_siyavula');
-    
-    $to_render_pr = '';
-    
-    if($siyavula_config->mathjax == 1){
-       $to_render  = '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?config=TeX-MML-AM_HTMLorMML-full"></script>';
+
+    // Enabled mathjax loader.
+    $siyavulaconfig = get_config('filter_siyavula');
+
+    $torenderpr = '';
+
+    if ($siyavulaconfig->mathjax == 1) {
+        $torender  = '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?config=TeX-MML-AM_HTMLorMML-full"></script>';
     }
-    
-    $to_render_pr .= '<link rel="stylesheet" href="https://www.siyavula.com/static/themes/emas/siyavula-api/siyavula-api.min.css"/>';
-    $to_render_pr .= '<link rel="stylesheet" href="https://www.siyavula.com/static/themes/emas/question-api/question-api.min.css"/>';
-    $to_render_pr .= '<link rel="stylesheet" href="'.$CFG->wwwroot.'/filter/siyavula/styles/general.css"/>';
-    
-    $to_render_pr .= '<main class="sv-region-main emas sv practice-section-question">
+
+    $torenderpr .= '<link rel="stylesheet" href="https://www.siyavula.com/static/themes/emas/siyavula-api/siyavula-api.min.css"/>';
+    $torenderpr .= '<link rel="stylesheet" href="https://www.siyavula.com/static/themes/emas/question-api/question-api.min.css"/>';
+    $torenderpr .= '<link rel="stylesheet" href="'.$CFG->wwwroot.'/filter/siyavula/styles/general.css"/>';
+
+    $torenderpr .= '<main class="sv-region-main emas sv practice-section-question">
                       <div class="item-psq question">
                         <div id="monassis" class="monassis monassis--practice monassis--maths monassis--siyavula-api">
                           <div class="question-wrapper">
@@ -433,7 +387,7 @@ function get_html_question_practice_toc($questionapi, $questionchaptertitle,$que
                         </div>
                       </div>
                       <div class="item-psq">
-                        
+
                         <div class="sv-panel-wrapper sv-panel-wrapper--toc">
                         <div class="sv-panel sv-panel--dashboard sv-panel--toc sv-panel--toc-modern no-secondary-section">
                           <div class="sv-panel__header">
@@ -450,10 +404,14 @@ function get_html_question_practice_toc($questionapi, $questionchaptertitle,$que
                                 <ul class="sv-toc__chapters">
                                   <li class="sv-toc__chapter">
                                     <div class="sv-toc__chapter-header">
-                                      <div class="sv-toc__chapter-title"><span id="chapter-mastery-title">'.$questionchaptertitle.'</span></div>
+                                      <div class="sv-toc__chapter-title">
+                                        <span id="chapter-mastery-title">'.$questionchaptertitle.'</span></div>
                                       <div class="sv-toc__chapter-mastery">
                                         <div class="sv-toc__section-mastery">
-                                          <progress class="progress" id="chapter-mastery" value="'.round($questionchaptermastery).'" max="100" data-text="'.round($questionchaptermastery).'%"></progress>
+                                            <progress class="progress" id="chapter-mastery"
+                                                value="'.round($questionchaptermastery).'" max="100"
+                                                data-text="'.round($questionchaptermastery).'%">
+                                            </progress>
                                         </div>
                                       </div>
                                     </div>
@@ -465,7 +423,10 @@ function get_html_question_practice_toc($questionapi, $questionchaptertitle,$que
                                                 <span id="section-mastery-title">'.$questionsectiontitle.'</span>
                                               </div>
                                               <div class="sv-toc__section-mastery">
-                                                <progress class="progress" id="section-mastery" value="'.round($questionmastery).'" max="100" data-text="'.round($questionmastery).'%"></progress><br>
+                                                <progress class="progress" id="section-mastery"
+                                                    value="'.round($questionmastery).'" max="100"
+                                                    data-text="'.round($questionmastery).'%">
+                                                </progress><br>
                                               </div>
                                             </div>
                                           </li>
@@ -479,17 +440,17 @@ function get_html_question_practice_toc($questionapi, $questionchaptertitle,$que
                         </div>
                       </div>
                     </main>';
-                    
-    return $to_render_pr;
+
+    return $torenderpr;
 }
 
 
-//Html render practice session
-function retry_question_html($activityid, $responseid, $token, $external_token, $baseurl){
+// Html render practice session.
+function retry_question_html($activityid, $responseid, $token, $externaltoken, $baseurl) {
     global $USER, $CFG;
 
     $curl = curl_init();
-    
+
     curl_setopt_array($curl, array(
       CURLOPT_URL => $baseurl.'api/siyavula/v1/activity/'.$activityid.'/response/'.$responseid.'/retry',
       CURLOPT_RETURNTRANSFER => true,
@@ -499,19 +460,19 @@ function retry_question_html($activityid, $responseid, $token, $external_token, 
       CURLOPT_FOLLOWLOCATION => true,
       CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
       CURLOPT_CUSTOMREQUEST => "POST",
-      CURLOPT_HTTPHEADER => array('JWT: ' .$token, 'Authorization: JWT ' .$external_token),
+      CURLOPT_HTTPHEADER => array('JWT: ' .$token, 'Authorization: JWT ' .$externaltoken),
     ));
-   
+
     $response = curl_exec($curl);
     $response = json_decode($response);
 
-    $question_html = $response->response->question_html;
-    $new_question_html = '';
-    $new_question_html .= '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?id=2&config=TeX-MML-AM_HTMLorMML-full"></script>'; // Para cargar el MathJax
+    $questionhtml = $response->response->question_html;
+    $newquestionhtml = '';
+    $newquestionhtml .= '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?id=2&config=TeX-MML-AM_HTMLorMML-full"></script>'; // Para cargar el MathJax
 
-    $new_question_html .= $question_html;
-        
-    $response->response->question_html = $new_question_html;
+    $newquestionhtml .= $questionhtml;
+
+    $response->response->question_html = $newquestionhtml;
 
     curl_close($curl);
 

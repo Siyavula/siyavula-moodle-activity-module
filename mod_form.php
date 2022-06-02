@@ -70,20 +70,22 @@ class mod_siyavula_mod_form extends moodleform_mod {
         $mform->addElement('header', 'title_select_subject', get_string('title_select_subject', 'mod_siyavula'));
         $mform->addElement('static', 'label1', '', get_string('desc_select_subject', 'mod_siyavula'));
 
-        $config_subjects = get_config('mod_siyavula');
-        $config_subjects_array = preg_split("/(\r\n|\n|\r)/", $config_subjects->grades_subjects);
-        foreach($config_subjects_array as $subject_grade) {
-            $radio_subject = [];
-            $info = explode(':', $subject_grade);
+        $configsubjects = get_config('mod_siyavula');
+        $configsubjectsarray = preg_split("/(\r\n|\n|\r)/", $configsubjects->grades_subjects);
+        foreach ($configsubjectsarray as $subjectgrade) {
+            $radiosubject = [];
+            $info = explode(':', $subjectgrade);
             $subject = $info[0];
             $grades = explode(',', $info[1]);
-            foreach($grades as $grade) {
-                $radio_subject[] = $mform->createElement('radio', 'subject_grade_selected', '', get_string('grade', 'mod_siyavula') . " $grade", "$subject:$grade");
+            foreach ($grades as $grade) {
+                $radiosubject[] = $mform->createElement('radio', 'subject_grade_selected', '',
+                    get_string('grade', 'mod_siyavula') . " $grade", "$subject:$grade");
             }
-            $mform->addGroup($radio_subject, 'radioar', ucfirst($subject), array('<br/>'), false);
+            $mform->addGroup($radiosubject, 'radioar', ucfirst($subject), array('<br/>'), false);
 
         }
-        // Add here custom grade
+
+        // Add here custom grade.
         $mform->addElement('header', 'title_select_grade', get_string('grade', 'mod_siyavula'));
         $gradepassfieldname = 'gradepass';
         $gradefieldname = '';
@@ -92,12 +94,9 @@ class mod_siyavula_mod_form extends moodleform_mod {
         $mform->setDefault($gradepassfieldname, '');
         $mform->setType($gradepassfieldname, PARAM_RAW);
         $mform->hideIf($gradepassfieldname, "{$gradefieldname}[modgrade_type]", 'eq', 'none');
-       
-        // Add standard grading elements.
-        //$this->standard_grading_coursemodule_elements();
 
         // Add standard elements.
-        $this->standard_coursemodule_elements(); // If comment this line, appear error
+        $this->standard_coursemodule_elements(); // If comment this line, appear error.
 
         // Add standard buttons.
         $this->add_action_buttons();
