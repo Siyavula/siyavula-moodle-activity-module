@@ -368,10 +368,6 @@ function get_html_question_practice_toc($questionapi, $questionchaptertitle,
 
     $torenderpr = '';
 
-    if ($siyavulaconfig->mathjax == 1) {
-        $torender  = '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?config=TeX-MML-AM_HTMLorMML-full"></script>';
-    }
-
     $torenderpr .= '<link rel="stylesheet" href="https://www.siyavula.com/static/themes/emas/siyavula-api/siyavula-api.min.css"/>';
     $torenderpr .= '<link rel="stylesheet" href="https://www.siyavula.com/static/themes/emas/question-api/question-api.min.css"/>';
     $torenderpr .= '<link rel="stylesheet" href="'.$CFG->wwwroot.'/filter/siyavula/styles/general.css"/>';

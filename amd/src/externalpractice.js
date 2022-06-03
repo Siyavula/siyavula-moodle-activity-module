@@ -19,14 +19,19 @@ define(["jquery", "core/ajax"], function ($, Ajax) {
         Y.fire(M.core.event.FILTER_CONTENT_UPDATED, { nodes: nodes });
 
         showRetryBtn = parseInt(showRetryBtn);
+
         $(document).on("click", ".check-answer-button", function (e) {
           e.preventDefault();
           submitResponse();
         });
 
+        $(document).on("click", ".sv-button--goto-question", function (e) {
+          ResetUrlParameters();
+        });
+
         function submitResponse() {
           // Get all Siyavula inputs that have not been marked "readonly"
-          var formData = $(".response-query-input")
+          var formData = $(".response-query input, .response-query select")
             .not('[name*="|readonly"]')
             .serialize();
 
@@ -60,10 +65,46 @@ define(["jquery", "core/ajax"], function ($, Ajax) {
 
           if (!showRetryBtn) {
             $(".sv-button--retry-question").style.display = "none";
+          } else {
+            setRetryUrlParameters();
           }
 
           // Typeset new HTML content
           MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+        }
+
+        function setRetryUrlParameters() {
+          var url = new URL(location.href);
+          var search_params = url.searchParams;
+
+          search_params.set("aid", activityId);
+          search_params.set("rid", responseId);
+
+          url.search = search_params.toString();
+
+          var new_url = url.toString();
+
+          const retry = document.querySelector('a[name="retry"]');
+          if (retry) {
+            retry.setAttribute("href", new_url);
+          }
+        }
+
+        function ResetUrlParameters() {
+          var url = new URL(location.href);
+          var search_params = url.searchParams;
+
+          search_params.delete("aid");
+          search_params.delete("rid");
+
+          url.search = search_params.toString();
+
+          var new_url = url.toString();
+
+          const nextPage = document.querySelector('a[name="nextPage"]');
+          if (nextPage) {
+            nextPage.setAttribute("href", new_url);
+          }
         }
 
         function showHideSolution(button) {
