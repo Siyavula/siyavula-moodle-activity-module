@@ -348,7 +348,6 @@ function get_activity_practice_toc($questionid, $token, $externaltoken, $baseurl
 
     $questionhtml = $response->response->question_html;
     $newquestionhtml = '';
-    $newquestionhtml .= '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?id=2&config=TeX-MML-AM_HTMLorMML-full"></script>'; // Para cargar el MathJax
 
     $newquestionhtml .= $questionhtml;
 
