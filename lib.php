@@ -464,7 +464,6 @@ function retry_question_html($activityid, $responseid, $token, $externaltoken, $
 
     $questionhtml = $response->response->question_html;
     $newquestionhtml = '';
-    $newquestionhtml .= '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?id=2&config=TeX-MML-AM_HTMLorMML-full"></script>'; // Para cargar el MathJax
 
     $newquestionhtml .= $questionhtml;
 
