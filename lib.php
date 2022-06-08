@@ -348,7 +348,6 @@ function get_activity_practice_toc($questionid, $token, $externaltoken, $baseurl
 
     $questionhtml = $response->response->question_html;
     $newquestionhtml = '';
-    $newquestionhtml .= '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?id=2&config=TeX-MML-AM_HTMLorMML-full"></script>'; // Para cargar el MathJax
 
     $newquestionhtml .= $questionhtml;
 
@@ -367,10 +366,6 @@ function get_html_question_practice_toc($questionapi, $questionchaptertitle,
     $siyavulaconfig = get_config('filter_siyavula');
 
     $torenderpr = '';
-
-    if ($siyavulaconfig->mathjax == 1) {
-        $torender  = '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?config=TeX-MML-AM_HTMLorMML-full"></script>';
-    }
 
     $torenderpr .= '<link rel="stylesheet" href="https://www.siyavula.com/static/themes/emas/siyavula-api/siyavula-api.min.css"/>';
     $torenderpr .= '<link rel="stylesheet" href="https://www.siyavula.com/static/themes/emas/question-api/question-api.min.css"/>';
@@ -468,7 +463,6 @@ function retry_question_html($activityid, $responseid, $token, $externaltoken, $
 
     $questionhtml = $response->response->question_html;
     $newquestionhtml = '';
-    $newquestionhtml .= '<script src="https://www.siyavula.com/static/themes/emas/node_modules/mathjax/MathJax.js?id=2&config=TeX-MML-AM_HTMLorMML-full"></script>'; // Para cargar el MathJax
 
     $newquestionhtml .= $questionhtml;
 
