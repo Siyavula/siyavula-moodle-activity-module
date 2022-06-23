@@ -57,6 +57,9 @@ input.toc {
   background: white;
   transition: all 0.35s;
 }
+#rd00 {
+  visibility: hidden;
+}
 .tab-close-toc {
   display: flex;
   justify-content: flex-end;
