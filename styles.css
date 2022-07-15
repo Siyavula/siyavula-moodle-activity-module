@@ -1,4 +1,4 @@
-body, html {
+ body, html {
   width: auto;
 }
 
@@ -35,13 +35,13 @@ input.toc {
 .tab-label-toc {
   display: flex;
   padding: 1em;
-  background: #1a252f;
+  background: #787878;
   font-weight: bold;
   cursor: pointer;
   /* Icon */
 }
 .tab-label-toc:hover {
-  background: #1a252f;
+  background: #787878;
 }
 .tab-label-toc::after {
   content: "❯";
@@ -53,7 +53,7 @@ input.toc {
 .tab-content-toc {
   max-height: 0;
   padding: 0 1em;
-  color: #2c3e50;
+  color: #787878;
   background: white;
   transition: all 0.35s;
 }
@@ -65,15 +65,15 @@ input.toc {
   justify-content: flex-end;
   padding: 1em;
   font-size: 0.75em;
-  background: #2c3e50;
+  background: #787878;
   cursor: pointer;
 }
 .tab-close-toc:hover {
-  background: #1a252f;
+  background: #787878;
 }
 
 input:checked + .tab-label-toc {
-  background: #1a252f;
+  background: #787878;
 }
 input:checked + .tab-label-toc::after {
   transform: rotate(90deg);
@@ -95,6 +95,40 @@ input:checked ~ .tab-content-toc {
 progress#chapter-mastery{
   color: black;
   font-weight: 400;
+}
+
+.rating {
+  width: 120px;
+  height: 24px;
+  position: relative;
+  background-color: gray;
+}
+
+.rating progress.rating-bg {
+  -webkit-appearance: none;
+  -moz-appearence: none;
+  appearance: none;
+  border: none;
+  display: inline-block;
+  height: 24px;
+  width: 100%;
+  color: orange;
+}
+
+.rating progress.rating-bg::-webkit-progress-value {
+  background-color: orange;
+}
+
+.rating progress.rating-bg::-moz-progress-bar {
+  background-color: orange;
+}
+
+.rating svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 .sv-toc__chapter-mastery{
     margin-left: auto;
