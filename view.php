@@ -112,8 +112,6 @@ if ($moduleinstance->subject_grade_selected && $sectionid == null) {
             $url = new moodle_url('/mod/siyavula/view.php', ['id' => $coursemodule->id, 'sid' => $section->id]);
             echo  html_writer::link($url, $section->title);
             echo '<div class="sv-toc__section-mastery">
-                  <progress class="progress" id="section-mastery" value="'.$section->mastery.'"
-                  max="100" data-text="'.$section->mastery.'%"></progress><br>
                     <svg style="display:none;">
                       <defs>
                         <symbol id="fivestars">
