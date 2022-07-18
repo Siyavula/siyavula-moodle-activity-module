@@ -97,11 +97,18 @@ progress#chapter-mastery{
   font-weight: 400;
 }
 
-.rating {
+.toc_white {
   width: 120px;
   height: 24px;
   position: relative;
   background-color: gray;
+}
+
+.toc_grey {
+  width: 120px;
+  height: 24px;
+  position: relative;
+  background-color: white;
 }
 
 .rating progress.rating-bg {
