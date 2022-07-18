@@ -141,6 +141,7 @@ progress#chapter-mastery{
 .item-toc a{
   height: 10%;
   color: #424242;
+  font-weight: bold;
 }
 .sv-toc__section-mastery{
     margin-left: auto;
