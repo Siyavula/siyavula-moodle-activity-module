@@ -35,13 +35,13 @@ input.toc {
 .tab-label-toc {
   display: flex;
   padding: 1em;
-  background: #787878;
+  background: #008bb2;
   font-weight: bold;
   cursor: pointer;
   /* Icon */
 }
 .tab-label-toc:hover {
-  background: #787878;
+  background: #008bb2;
 }
 .tab-label-toc::after {
   content: "❯";
@@ -53,7 +53,6 @@ input.toc {
 .tab-content-toc {
   max-height: 0;
   padding: 0 1em;
-  color: #787878;
   background: white;
   transition: all 0.35s;
 }
@@ -65,15 +64,15 @@ input.toc {
   justify-content: flex-end;
   padding: 1em;
   font-size: 0.75em;
-  background: #787878;
+  background: #008bb2;
   cursor: pointer;
 }
 .tab-close-toc:hover {
-  background: #787878;
+  background: #008bb2;
 }
 
 input:checked + .tab-label-toc {
-  background: #787878;
+  background: #008bb2;
 }
 input:checked + .tab-label-toc::after {
   transform: rotate(90deg);
@@ -116,15 +115,15 @@ progress#chapter-mastery{
   display: inline-block;
   height: 24px;
   width: 100%;
-  color: orange;
+  color: #f5bd00;
 }
 
 .rating progress.rating-bg::-webkit-progress-value {
-  background-color: orange;
+  background-color: #f5bd00;
 }
 
 .rating progress.rating-bg::-moz-progress-bar {
-  background-color: orange;
+  background-color: #f5bd00;
 }
 
 .rating svg {
@@ -144,7 +143,7 @@ progress#chapter-mastery{
 }
 .item-toc a{
   height: 10%;
-  color: #424242;
+  color: #008bb2;
   font-weight: bold;
 }
 .sv-toc__section-mastery{
