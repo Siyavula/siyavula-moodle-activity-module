@@ -97,11 +97,15 @@ progress#chapter-mastery{
   font-weight: 400;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 .rating {
   width: 120px;
   height: 24px;
   position: relative;
-  background-color: white;
+  background-color: gray;
 }
 
 .rating progress.rating-bg {
