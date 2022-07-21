@@ -132,7 +132,7 @@ progress#chapter-mastery{
   left: 0;
   width: 100%;
   height: 100%;
-  filter: brightness(0.9)
+  filter: brightness(0.9);
 }
 .sv-toc__chapter-mastery{
     margin-left: auto;
