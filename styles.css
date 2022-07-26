@@ -1,4 +1,4 @@
-body, html {
+ body, html {
   width: auto;
 }
 
@@ -29,19 +29,19 @@ input.toc {
 
 .tab-toc {
   width: 100%;
-  color: white;
+  color: black;
   overflow: hidden;
 }
 .tab-label-toc {
   display: flex;
   padding: 1em;
-  background: #1a252f;
+  background: #d9eef3;
   font-weight: bold;
   cursor: pointer;
   /* Icon */
 }
 .tab-label-toc:hover {
-  background: #1a252f;
+  background: #d9eef3;
 }
 .tab-label-toc::after {
   content: "❯";
@@ -53,7 +53,6 @@ input.toc {
 .tab-content-toc {
   max-height: 0;
   padding: 0 1em;
-  color: #2c3e50;
   background: white;
   transition: all 0.35s;
 }
@@ -65,15 +64,15 @@ input.toc {
   justify-content: flex-end;
   padding: 1em;
   font-size: 0.75em;
-  background: #2c3e50;
+  background: #d9eef3;
   cursor: pointer;
 }
 .tab-close-toc:hover {
-  background: #1a252f;
+  background: #d9eef3;
 }
 
 input:checked + .tab-label-toc {
-  background: #1a252f;
+  background: #d9eef3;
 }
 input:checked + .tab-label-toc::after {
   transform: rotate(90deg);
@@ -96,17 +95,55 @@ progress#chapter-mastery{
   color: black;
   font-weight: 400;
 }
+progress#section-mastery{
+  color: black;
+  font-weight: 400;
+}
+.mastery {
+  width: 120px;
+  height: 24px;
+  position: relative;
+  background-color: gray;}
+
+.mastery progress.mastery-bg {
+  -webkit-appearance: none;
+  -moz-appearence: none;
+  appearance: none;
+  border: none;
+  display: inline-block;
+  height: 24px;
+  width: 100%;
+  color: #f5bd00;
+}
+
+.mastery progress.mastery-bg::-webkit-progress-value {
+  background-color: #f5bd00;
+}
+
+.mastery progress.mastery-bg::-moz-progress-bar {
+  background-color: #f5bd00;
+}
+.mastery svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
 .sv-toc__chapter-mastery{
     margin-left: auto;
     margin-right: 5%;
 }
 .item-toc{
   display: flex;
+  padding: 1em;
 }
 .item-toc a{
   height: 10%;
+  color: black;
+  font-weight: bold;
 }
 .sv-toc__section-mastery{
     margin-left: auto;
-    margin-right: 6%;
+    margin-right: 5%;
 }
