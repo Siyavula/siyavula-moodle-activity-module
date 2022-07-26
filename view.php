@@ -90,11 +90,11 @@ if ($moduleinstance->subject_grade_selected && $sectionid == null) {
                 <svg style="display:none;">
                   <defs>
                     <symbol id="mastery-stars-chapter" class="mastery">
-                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#008bb2" fill-rule="evenodd"/>
-                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#008bb2" fill-rule="evenodd" transform="translate(24)"/>
-                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#008bb2" fill-rule="evenodd" transform="translate(48)"/>
-                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#008bb2" fill-rule="evenodd" transform="translate(72)"/>
-                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#008bb2" fill-rule="evenodd"  transform="translate(96)"/>
+                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd"/>
+                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd" transform="translate(24)"/>
+                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd" transform="translate(48)"/>
+                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd" transform="translate(72)"/>
+                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd"  transform="translate(96)"/>
                     </symbol>
                   </defs>
                 </svg>
@@ -123,7 +123,7 @@ if ($moduleinstance->subject_grade_selected && $sectionid == null) {
                       </defs>
                     </svg>
                     <div class="mastery">
-                      <progress class="mastery" id="chapter-mastery" value="'.$section->mastery.'" max="100" data-text="'.$section->mastery.'%"></progress>
+                      <progress class="mastery-bg" id="section-mastery" value="'.$section->mastery.'" max="100" data-text="'.$section->mastery.'%"></progress>
                       <svg><use xlink:href="#mastery-stars-section"/></svg>
                     </div>
                   </div>';

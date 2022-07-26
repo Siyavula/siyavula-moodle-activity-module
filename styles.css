@@ -29,19 +29,19 @@ input.toc {
 
 .tab-toc {
   width: 100%;
-  color: white;
+  color: black;
   overflow: hidden;
 }
 .tab-label-toc {
   display: flex;
   padding: 1em;
-  background: #008bb2;
+  background: #d9eef3;
   font-weight: bold;
   cursor: pointer;
   /* Icon */
 }
 .tab-label-toc:hover {
-  background: #008bb2;
+  background: #d9eef3;
 }
 .tab-label-toc::after {
   content: "❯";
@@ -64,15 +64,15 @@ input.toc {
   justify-content: flex-end;
   padding: 1em;
   font-size: 0.75em;
-  background: #008bb2;
+  background: #d9eef3;
   cursor: pointer;
 }
 .tab-close-toc:hover {
-  background: #008bb2;
+  background: #d9eef3;
 }
 
 input:checked + .tab-label-toc {
-  background: #008bb2;
+  background: #d9eef3;
 }
 input:checked + .tab-label-toc::after {
   transform: rotate(90deg);
@@ -95,17 +95,15 @@ progress#chapter-mastery{
   color: black;
   font-weight: 400;
 }
-
-* {
-  box-sizing: border-box;
+progress#section-mastery{
+  color: black;
+  font-weight: 400;
 }
-
 .mastery {
   width: 120px;
   height: 24px;
   position: relative;
-  background-color: gray;
-}
+  background-color: gray;}
 
 .mastery progress.mastery-bg {
   -webkit-appearance: none;
@@ -125,14 +123,12 @@ progress#chapter-mastery{
 .mastery progress.mastery-bg::-moz-progress-bar {
   background-color: #f5bd00;
 }
-
 .mastery svg {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  backdrop-filter: brightness(0.9);
 }
 .sv-toc__chapter-mastery{
     margin-left: auto;
@@ -144,7 +140,7 @@ progress#chapter-mastery{
 }
 .item-toc a{
   height: 10%;
-  color: #008bb2;
+  color: #d9eef3;
   font-weight: bold;
 }
 .sv-toc__section-mastery{
