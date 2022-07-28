@@ -37,6 +37,7 @@ input.toc {
   padding: 1em;
   background: #d9eef3;
   font-weight: bold;
+  font-size: 1.1em;
   cursor: pointer;
   /* Icon */
 }
@@ -137,6 +138,7 @@ progress#section-mastery{
 .item-toc{
   display: flex;
   padding: 1em;
+  font-size: 1.1em;
 }
 .item-toc a{
   height: 10%;
