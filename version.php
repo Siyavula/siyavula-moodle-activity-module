@@ -26,7 +26,6 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_siyavula';
 $plugin->release = '0.1.0';
-$plugin->version =  2022062400;
+$plugin->version =  2022072600;
 $plugin->requires = 2019111809;
 $plugin->maturity = MATURITY_STABLE;
-
