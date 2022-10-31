@@ -111,7 +111,7 @@ function siyavula_delete_instance($id) {
 function siyavula_scale_used($moduleinstanceid, $scaleid) {
     global $DB;
 
-    if ($scaleid && $DB->record_exists('siyavula', array('id' => $moduleinstanceid, 'grade' => -$scaleid))) {
+    if ($scaleid && $DB->record_exists('siyavula_grades', array('id' => $moduleinstanceid, 'grade' => -$scaleid))) {
         return true;
     } else {
         return false;
@@ -129,7 +129,7 @@ function siyavula_scale_used($moduleinstanceid, $scaleid) {
 function siyavula_scale_used_anywhere($scaleid) {
     global $DB;
 
-    if ($scaleid and $DB->record_exists('siyavula', array('grade' => -$scaleid))) {
+    if ($scaleid and $DB->record_exists('siyavula_grades', array('grade' => -$scaleid))) {
         return true;
     } else {
         return false;
