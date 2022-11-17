@@ -64,7 +64,7 @@ $PAGE->set_title(format_string($moduleinstance->name));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($modulecontext);
 
-$PAGE->requires->css($CFG->wwwroot . '/filter/siyavula/styles/general.css');
+$PAGE->requires->css($CFG->dirroot . '/filter/siyavula/styles/general.css');
 
 echo $OUTPUT->header();
 
