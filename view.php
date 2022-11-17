@@ -65,11 +65,11 @@ $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($modulecontext);
 
 // $PAGE->requires->css('/filter/siyavula/styles/general.css');
-echo $CFG->wwwroot;
+echo $CFG->wwwroot . '/filter/siyavula/styles/general.css';
 
 echo $OUTPUT->header();
 
-echo $CFG->wwwroot;
+echo $CFG->wwwroot . '/filter/siyavula/styles/general.css';
 
 $info = explode(':', $moduleinstance->subject_grade_selected);
 $subject = $info[0];
