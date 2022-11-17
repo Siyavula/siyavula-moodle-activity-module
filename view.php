@@ -64,8 +64,6 @@ $PAGE->set_title(format_string($moduleinstance->name));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($modulecontext);
 
-$PAGE->requires->css(__DIR__ . '../../filter/siyavula/styles/general.css');
-
 echo $OUTPUT->header();
 
 $info = explode(':', $moduleinstance->subject_grade_selected);
@@ -79,6 +77,8 @@ $subjectgradetoc  = get_subject_grade_toc($subject, $grade, $token);
 
 // If selected one grade.
 if ($moduleinstance->subject_grade_selected && $sectionid == null) {
+    $PAGE->requires->css('/filter/siyavula/styles/general.css');
+
     echo html_writer::start_tag('div', ['class' => 'tabs-toc']);
     foreach ($subjectgradetoc->chapters as $k => $chapter) {
         echo html_writer::start_tag('div', ['class' => 'tab-toc', 'data-cid' => $chapter->id]);
