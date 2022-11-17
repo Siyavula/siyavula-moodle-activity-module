@@ -82,7 +82,7 @@ $subjectgradetoc  = get_subject_grade_toc($subject, $grade, $token);
 
 // If selected one grade.
 if ($moduleinstance->subject_grade_selected && $sectionid == null) {
-    echo '<link rel="stylesheet" href="{{ $CFG->wwwroot }}/filter/siyavula/styles/general.css" />'
+    echo '<link rel="stylesheet" href="{{ $CFG->wwwroot }}/filter/siyavula/styles/general.css" />';
     echo html_writer::start_tag('div', ['class' => 'tabs-toc']);
     foreach ($subjectgradetoc->chapters as $k => $chapter) {
         echo html_writer::start_tag('div', ['class' => 'tab-toc', 'data-cid' => $chapter->id]);
