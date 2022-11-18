@@ -153,6 +153,7 @@ if ($sectionid != null && $activityid === null && $responseid === null) {
 
     $renderer = $PAGE->get_renderer('filter_siyavula');
     $activityrenderable = new practice_activity_renderable();
+    $activityrenderable->wwwroot = $CFG->wwwroot;
     $activityrenderable->baseurl = $baseurl;
     $activityrenderable->token = $token;
     $activityrenderable->usertoken = $usertoken->token;
