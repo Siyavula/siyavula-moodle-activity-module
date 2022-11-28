@@ -64,7 +64,7 @@ $PAGE->set_title(format_string($moduleinstance->name));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($modulecontext);
 
-$PAGE->requires->css('/mod/siyavula/styles.css');
+$PAGE->requires->css('/filter/siyavula/styles/general.css');
 
 echo $OUTPUT->header();
 
@@ -153,6 +153,7 @@ if ($sectionid != null && $activityid === null && $responseid === null) {
 
     $renderer = $PAGE->get_renderer('filter_siyavula');
     $activityrenderable = new practice_activity_renderable();
+    $activityrenderable->wwwroot = $CFG->wwwroot;
     $activityrenderable->baseurl = $baseurl;
     $activityrenderable->token = $token;
     $activityrenderable->usertoken = $usertoken->token;
