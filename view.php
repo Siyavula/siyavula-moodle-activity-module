@@ -25,6 +25,8 @@
 require(__DIR__.'/../../config.php');
 require_once(__DIR__.'/lib.php');
 
+require_once($CFG->dirroot. '/filter/siyavula/lib.php');
+
 use filter_siyavula\renderables\practice_activity_renderable;
 use filter_siyavula\renderables\standalone_activity_renderable;
 
@@ -67,6 +69,13 @@ $PAGE->set_context($modulecontext);
 $PAGE->requires->css('/filter/siyavula/styles/general.css');
 
 echo $OUTPUT->header();
+
+// Subject and grade not configured.
+if (!$moduleinstance->subject_grade_selected) {
+    echo core\notification::error(get_string('subjectnotdefined', 'siyavula'), false);
+    echo $OUTPUT->footer();
+    exit;
+}
 
 $info = explode(':', $moduleinstance->subject_grade_selected);
 $subject = $info[0];

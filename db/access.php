@@ -15,35 +15,34 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * course module viewed event.
+ * Siyavula module capability definition
  *
  * @package     mod_siyavula
  * @copyright   2021 Solutto Consulting
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace mod_siyavula\event;
-defined('MOODLE_INTERNAL') || die();
+defined('MOODLE_INTERNAL') || die;
 
-/**
- * The mod_siyavula course module viewed event class.
- *
- * @package    mod_siyavula
- * @copyright  2021 Solutto Consulting
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class course_module_viewed extends \core\event\course_module_viewed {
+$capabilities = array(
 
-    /**
-     * Init method.
-     */
-    protected function init() {
-        $this->data['crud'] = 'r';
-        $this->data['edulevel'] = self::LEVEL_PARTICIPATING;
-        $this->data['objecttable'] = 'siyavula';
-    }
+    'mod/siyavula:view' => array(
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => array(
+            'guest' => CAP_ALLOW,
+            'user' => CAP_ALLOW,
+        )
+    ),
 
-    public static function get_objectid_mapping() {
-        return array('db' => 'siyavula', 'restore' => 'siyavula');
-    }
-}
+    'mod/siyavula:addinstance' => array(
+        'riskbitmask' => RISK_XSS,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => array(
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW
+        ),
+        'clonepermissionsfrom' => 'moodle/course:manageactivities'
+    ),
+);
