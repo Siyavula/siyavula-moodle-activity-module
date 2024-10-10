@@ -15,26 +15,34 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version and other meta-data are defined here.
+ * Siyavula module capability definition
  *
  * @package     mod_siyavula
  * @copyright   2021 Solutto Consulting
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+defined('MOODLE_INTERNAL') || die;
 
-$plugin->component = 'mod_siyavula';
-$plugin->release = '0.1.1';
-$plugin->version =  2022111801;
-$plugin->requires = 2019111809;
-$plugin->maturity = MATURITY_STABLE;
-$plugin->supported = [
-    383,
-    400,
-    410,
-    420,
-    430,
-    440
-];
-$plugin->release = '1.1.0';
+$capabilities = array(
+
+    'mod/siyavula:view' => array(
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => array(
+            'guest' => CAP_ALLOW,
+            'user' => CAP_ALLOW,
+        )
+    ),
+
+    'mod/siyavula:addinstance' => array(
+        'riskbitmask' => RISK_XSS,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => array(
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW
+        ),
+        'clonepermissionsfrom' => 'moodle/course:manageactivities'
+    ),
+);

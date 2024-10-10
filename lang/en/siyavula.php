@@ -36,3 +36,7 @@ $string['modulenameplural'] = 'Siyavula Toc';
 $string['pluginadministration'] = 'Siyavula Toc';
 $string['modulename_help'] = 'Siyavula Toc Question';;
 $string['grade'] = 'Grade Toc';
+$string['siyavulaname_help'] = 'An instructor / teacher can embed a table of contents that allows a student to selection a section from an interactive widget, once done this is the same as the embedded practice filter experience - and is driven by the algorithm on www.siyavula.com.';
+$string['siyavula:view'] = 'View the siyavula module';
+$string['siyavula:addinstance'] = 'Add a new siyavula module';
+$string['subjectnotdefined'] = 'Grade and subject not defined to render';
