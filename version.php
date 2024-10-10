@@ -29,3 +29,12 @@ $plugin->release = '0.1.0';
 $plugin->version =  2022111800;
 $plugin->requires = 2019111809;
 $plugin->maturity = MATURITY_STABLE;
+$plugin->supported = [
+    383,
+    400,
+    410,
+    420,
+    430,
+    440
+];
+$plugin->release = '1.1.0';
