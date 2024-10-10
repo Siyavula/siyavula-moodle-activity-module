@@ -169,6 +169,7 @@ function siyavula_grade_item_update($moduleinstance, $mastery) {
         $record->timemodified = time();
         $DB->update_record($siyavulagrades, $record);
     } else {
+        $record = new stdClass();
         // If not exist, insert.
         $record->subject      = $mastery->subject;
         $record->grade        = $mastery->grade;
