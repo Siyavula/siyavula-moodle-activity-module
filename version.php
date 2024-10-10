@@ -29,3 +29,5 @@ $plugin->release = '0.1.1';
 $plugin->version =  2022111801;
 $plugin->requires = 2019111809;
 $plugin->maturity = MATURITY_STABLE;
+$plugin->supported = [38, 444];
+$plugin->release = '1.1.0';
