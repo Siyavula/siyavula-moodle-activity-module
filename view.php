@@ -158,7 +158,12 @@ if ($sectionid != null && $activityid === null && $responseid === null) {
     $activitytype = 'practice';
     siyavula_update_grades($moduleinstance, $USER->id, $subjectgradetoc);
 
-    $PAGE->requires->js_call_amd('filter_siyavula/initmathjax', 'init');
+    // Current version is Moodle 4.0 or higher use the event types. Otherwise use the older versions.
+    if ($CFG->version >= 2022041912) {
+        $PAGE->requires->js_call_amd('filter_siyavula/initmathjax', 'init');
+    } else {
+        $PAGE->requires->js_call_amd('filter_siyavula/initmathjax-backward', 'init');
+    }
 
     $renderer = $PAGE->get_renderer('filter_siyavula');
     $activityrenderable = new practice_activity_renderable();
