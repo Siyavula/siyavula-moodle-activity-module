@@ -88,8 +88,10 @@ $subjectgradetoc  = get_subject_grade_toc($subject, $grade, $token);
 
 // If selected one grade.
 if ($moduleinstance->subject_grade_selected && $sectionid == null) {
+
     echo html_writer::start_tag('div', ['class' => 'tabs-toc']);
-    foreach ($subjectgradetoc->chapters as $k => $chapter) {
+
+    foreach ($subjectgradetoc->chapters ?? [] as $k => $chapter) {
         echo html_writer::start_tag('div', ['class' => 'tab-toc', 'data-cid' => $chapter->id]);
         echo    html_writer::empty_tag('input', ['class' => 'toc', 'type' => 'radio', 'id' => $k, 'name' => "tocs"]);
         echo    html_writer::start_tag('label', ['class' => 'tab-label-toc', 'for' => $k]);
@@ -153,6 +155,7 @@ if ($moduleinstance->subject_grade_selected && $sectionid == null) {
 
 // If selected one section, render it.
 if ($sectionid != null && $activityid === null && $responseid === null) {
+
     $token = siyavula_get_user_token($siyavulaconfig, $clientip);
     $usertoken = siyavula_get_external_user_token($siyavulaconfig, $clientip, $token);
     $activitytype = 'practice';
@@ -160,21 +163,27 @@ if ($sectionid != null && $activityid === null && $responseid === null) {
 
     // Current version is Moodle 4.0 or higher use the event types. Otherwise use the older versions.
     if ($CFG->version >= 2022041912) {
-        $PAGE->requires->js_call_amd('filter_siyavula/initmathjax', 'init');
+        $PAGE->requires->js_call_amd('filter_siyavula/initmathjax', 'init', ['issupported' => $CFG->version <= 2025040100]);
     } else {
         $PAGE->requires->js_call_amd('filter_siyavula/initmathjax-backward', 'init');
     }
 
     $renderer = $PAGE->get_renderer('filter_siyavula');
+
     $activityrenderable = new practice_activity_renderable();
-    $activityrenderable->wwwroot = $CFG->wwwroot;
-    $activityrenderable->baseurl = $baseurl;
-    $activityrenderable->token = $token;
-    $activityrenderable->usertoken = $usertoken->token;
     $activityrenderable->activitytype = $activitytype;
     $activityrenderable->sectionid = $sectionid;
+    $activityrenderable->uniqueid = uniqid('siyavula-activity-');
+
+    $config = new \stdClass();
+    $config->wwwroot = $CFG->wwwroot;
+    $config->baseurl = $baseurl;
+    $config->token = $token;
+    $config->usertoken = $usertoken->token;
 
     echo $renderer->render_practice_activity($activityrenderable);
+    echo $renderer->render_assets([$activityrenderable], $config);
+
 }
 
 echo $OUTPUT->footer();
