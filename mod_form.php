@@ -107,6 +107,9 @@ class mod_siyavula_mod_form extends moodleform_mod {
      * @return stdClass
      */
     public function get_curriculum(): stdClass {
+	    global $CFG;
+
+        require_once($CFG->dirroot. '/filter/siyavula/lib.php');
 
         $siyavulaconfig = get_config('filter_siyavula');
         // Default to CAPS if not set.
