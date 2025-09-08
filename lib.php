@@ -289,15 +289,11 @@ function get_subject_grade_toc($subject, $grade, $token, $userid = 0) {
     $siyavulaconfig = get_config('filter_siyavula');
     $curl = curl_init();
 
-    if ($userid == 0) {
-        $email = $USER->email;
-    } else {
-        $user = core_user::get_user($userid);
-        $email = $user->email;
-    }
+    $user = $userid == 0 ? $USER : \core_user::get_user($userid);
+    $externaluserid = siyavula_get_external_user_id($siyavulaconfig, $user);
 
     curl_setopt_array($curl, array(
-      CURLOPT_URL => $siyavulaconfig->url_base."api/siyavula/v1/toc/user/$email/subject/$subject/grade/$grade",
+      CURLOPT_URL => $siyavulaconfig->url_base."api/siyavula/v1/toc/user/$externaluserid/subject/$subject/grade/$grade",
       CURLOPT_RETURNTRANSFER => true,
       CURLOPT_ENCODING => "",
       CURLOPT_MAXREDIRS => 10,

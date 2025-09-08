@@ -70,19 +70,17 @@ class mod_siyavula_mod_form extends moodleform_mod {
         $mform->addElement('header', 'title_select_subject', get_string('title_select_subject', 'mod_siyavula'));
         $mform->addElement('static', 'label1', '', get_string('desc_select_subject', 'mod_siyavula'));
 
-        $configsubjects = get_config('mod_siyavula');
-        $configsubjectsarray = preg_split("/(\r\n|\n|\r)/", $configsubjects->grades_subjects);
-        foreach ($configsubjectsarray as $subjectgrade) {
+        // Get the curriculum list from Siyavula API.
+        $getcurriculumlist = $this->get_curriculum();
+        foreach ($getcurriculumlist->subjects ?? [] as $key => $curriculum) {
             $radiosubject = [];
-            $info = explode(':', $subjectgrade);
-            $subject = $info[0];
-            $grades = explode(',', $info[1]);
-            foreach ($grades as $grade) {
-                $radiosubject[] = $mform->createElement('radio', 'subject_grade_selected', '',
-                    get_string('grade', 'mod_siyavula') . " $grade", "$subject:$grade");
-            }
-            $mform->addGroup($radiosubject, 'radioar', ucfirst($subject), array('<br/>'), false);
+            $subject = $curriculum->name;
+            $grades = $curriculum->grades;
 
+            foreach ($grades as $grade) {
+                $radiosubject[] = $mform->createElement('radio', 'subject_grade_selected', '', $grade->name, "$subject:$grade->id");
+            }
+            $mform->addGroup($radiosubject, 'radioar', $curriculum->full_name ?? ucfirst($subject), array('<br/>'), false);
         }
 
         // Add here custom grade.
@@ -100,6 +98,50 @@ class mod_siyavula_mod_form extends moodleform_mod {
 
         // Add standard buttons.
         $this->add_action_buttons();
+
+    }
+
+    /**
+     * Get the Siyavula curriculum list from the API.
+     *
+     * @return stdClass
+     */
+    public function get_curriculum(): stdClass {
+	    global $CFG;
+
+        require_once($CFG->dirroot. '/filter/siyavula/lib.php');
+
+        $siyavulaconfig = get_config('filter_siyavula');
+        // Default to CAPS if not set.
+        $clientcurriculum = $siyavulaconfig->client_curriculum ?? 'caps';
+
+        $clientip = $_SERVER['REMOTE_ADDR'];
+        $token = siyavula_get_user_token($siyavulaconfig, $clientip);
+
+        $curl = new curl();
+        $options = array(
+            'CURLOPT_RETURNTRANSFER' => true,
+            'CURLOPT_HTTPHEADER' => array('JWT: '.$token),
+            'CURLOPT_TIMEOUT' => 0,
+            'CURLOPT_HTTP_VERSION' => CURL_HTTP_VERSION_1_1,
+        );
+        $location = $siyavulaconfig->url_base . "api/siyavula/v1/curriculum";
+        $result = $curl->get($location, [], $options);
+
+        if ($msg = $curl->error) {
+            throw new moodle_exception('curlerror', 'mod_siyavula', '', $msg);
+        }
+
+        $response = json_decode($result);
+
+        if (isset($response->errors)) {
+            foreach ($response->errors as $error) {
+                \core\notification::error('Siyavula curriculum api: ' . $error->message);
+            }
+            return (object)[];
+        }
+
+        return $response;
     }
 
 }
