@@ -18,19 +18,18 @@
  * Plugin version and other meta-data are defined here.
  *
  * @package     mod_siyavula
- * @copyright   2021 Solutto Consulting
+ * @copyright   2025 Siyavula
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_siyavula';
-$plugin->release = '0.1.1';
-$plugin->version =  2024102201;
+$plugin->version =  2025090800;
 $plugin->requires = 2019111809;
 $plugin->maturity = MATURITY_STABLE;
 $plugin->supported = [311, 502];
-$plugin->release = '1.2.0';
+$plugin->release = '2.0.0';
 $plugin->dependencies = [
-    'filter_siyavula' => 2024102200,
+    'filter_siyavula' => 2025090800,
 ];
