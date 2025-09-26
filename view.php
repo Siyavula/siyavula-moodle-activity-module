@@ -84,6 +84,7 @@ $clientip = $_SERVER['REMOTE_ADDR'];
 $siyavulaconfig = get_config('filter_siyavula');
 $baseurl = $siyavulaconfig->url_base;
 $token = siyavula_get_user_token($siyavulaconfig, $clientip);
+$usertoken = siyavula_get_external_user_token($siyavulaconfig, $clientip, $token);
 $subjectgradetoc  = get_subject_grade_toc($subject, $grade, $token);
 
 // If selected one grade.
