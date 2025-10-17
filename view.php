@@ -70,6 +70,16 @@ $PAGE->requires->css('/filter/siyavula/styles/general.css');
 
 echo $OUTPUT->header();
 
+// Check if user is guest or not logged in.
+if (isguestuser() || !isloggedin()) {
+    $loginurl = $CFG->wwwroot . '/login/index.php';
+    echo '<div class="alert alert-info" role="alert">' .
+         '<strong>Siyavula Activity:</strong> Please <a href="' . $loginurl . '">log in</a> to access this content.' .
+         '</div>';
+    echo $OUTPUT->footer();
+    exit;
+}
+
 // Subject and grade not configured.
 if (!$moduleinstance->subject_grade_selected) {
     echo core\notification::error(get_string('subjectnotdefined', 'siyavula'), false);
