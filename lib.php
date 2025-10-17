@@ -266,11 +266,12 @@ function siyavula_get_toc_user_mastery($moduleinstance, $subjectgradetoc, $useri
     $subject            = $info[0];
     $grade              = $info[1];
     $summastery = 0;
-    foreach ($subjectgradetoc->chapters as $k => $chapter) {
+    $chapters = is_array($subjectgradetoc->chapters ?? null) ? $subjectgradetoc->chapters : [];
+    foreach ($chapters as $k => $chapter) {
         $summastery += $chapter->mastery;
     }
-    $countchapters = count($subjectgradetoc->chapters);
-    $totalgrade = $summastery / $countchapters;
+    $countchapters = count($chapters);
+    $totalgrade = $countchapters > 0 ? $summastery / $countchapters : 0;
 
     $mastery = new stdClass();
     $mastery->userid   = $userid;

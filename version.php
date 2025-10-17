@@ -25,11 +25,11 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_siyavula';
-$plugin->version =  2025092500;
+$plugin->version =  2025101700;
 $plugin->requires = 2019111809;
 $plugin->maturity = MATURITY_STABLE;
 $plugin->supported = [311, 502];
-$plugin->release = '2.0.1';
+$plugin->release = '2.0.2';
 $plugin->dependencies = [
     'filter_siyavula' => 2025090800,
 ];
