@@ -24,6 +24,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+// Load filter_siyavula helper functions
+require_once($CFG->dirroot . '/filter/siyavula/lib.php');
+
 /**
  * Return if the plugin supports $feature.
  *
@@ -288,27 +291,23 @@ function get_subject_grade_toc($subject, $grade, $token, $userid = 0) {
     global $USER;
 
     $siyavulaconfig = get_config('filter_siyavula');
-    $curl = curl_init();
 
     $user = $userid == 0 ? $USER : \core_user::get_user($userid);
     $externaluserid = siyavula_get_external_user_id($siyavulaconfig, $user);
 
-    curl_setopt_array($curl, array(
-      CURLOPT_URL => $siyavulaconfig->url_base."api/siyavula/v1/toc/user/$externaluserid/subject/$subject/grade/$grade",
-      CURLOPT_RETURNTRANSFER => true,
-      CURLOPT_ENCODING => "",
-      CURLOPT_MAXREDIRS => 10,
-      CURLOPT_TIMEOUT => 0,
-      CURLOPT_FOLLOWLOCATION => true,
-      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-      CURLOPT_CUSTOMREQUEST => "GET",
-      CURLOPT_HTTPHEADER => array('JWT: '.$token),
-    ));
+    // Convert stdClass from get_config to object expected by helper
+    $configobj = (object)['url_base' => $siyavulaconfig->url_base];
 
-    $response = curl_exec($curl);
-    $response = json_decode($response);
+    $response = siyavula_api_request(
+        $configobj,
+        "api/siyavula/v1/toc/user/$externaluserid/subject/$subject/grade/$grade",
+        'GET',
+        array(
+            'token' => $token,
+            'component' => 'mod_siyavula'
+        )
+    );
 
-    curl_close($curl);
     if (isset($response->errors)) {
         return $response->errors;
     } else {
