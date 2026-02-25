@@ -31,5 +31,5 @@ $plugin->maturity = MATURITY_STABLE;
 $plugin->supported = [311, 502];
 $plugin->release = '2.0.3';
 $plugin->dependencies = [
-    'filter_siyavula' => 2025090800,
+    'filter_siyavula' => 2026022501,
 ];
