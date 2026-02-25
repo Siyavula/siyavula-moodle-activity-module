@@ -93,7 +93,8 @@ class mod_siyavula_external extends external_api {
         }
 
         $gradeitem->update_final_grade($USER->id, $mastery, 'mod/siyavula');
-        grade_regrade_final_grades($moduleinstance->course);
+        // Scope the regrade to this student only — avoids regrading the whole course.
+        grade_regrade_final_grades($moduleinstance->course, $USER->id);
 
         return ['success' => true];
     }
