@@ -174,8 +174,6 @@ if ($moduleinstance->subject_grade_selected && $sectionid == null) {
 // If selected one section, render it.
 if ($sectionid != null && $activityid === null && $responseid === null) {
 
-    $token = siyavula_get_user_token($siyavulaconfig, $clientip);
-    $usertoken = siyavula_get_external_user_token($siyavulaconfig, $clientip, $token);
     $activitytype = 'practice';
 
     // Current version is Moodle 4.0 or higher use the event types. Otherwise use the older versions.

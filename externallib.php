@@ -30,67 +30,6 @@ require_once(__DIR__ . '/lib.php');
 class mod_siyavula_external extends external_api {
 
     /**
-     * Parameter definition for update_grades.
-     */
-    public static function update_grades_parameters() {
-        return new external_function_parameters([
-            'cmid' => new external_value(PARAM_INT, 'Course module ID of the siyavula activity'),
-        ]);
-    }
-
-    /**
-     * Fetch the current TOC mastery from Siyavula and write it to the Moodle
-     * grade book for the currently logged-in user.
-     *
-     * Called from the browser via core/ajax after each question submission so
-     * that grades update without requiring the student to re-click a section link.
-     *
-     * @param int $cmid  Course module ID.
-     * @return array     ['success' => bool]
-     */
-    public static function update_grades($cmid) {
-        global $CFG, $DB, $USER;
-        require_once($CFG->dirroot . '/filter/siyavula/lib.php');
-
-        $params = self::validate_parameters(
-            self::update_grades_parameters(),
-            ['cmid' => $cmid]
-        );
-
-        $cm = get_coursemodule_from_id('siyavula', $params['cmid'], 0, false, MUST_EXIST);
-        $context = context_module::instance($cm->id);
-        self::validate_context($context);
-
-        $moduleinstance = $DB->get_record('siyavula', ['id' => $cm->instance], '*', MUST_EXIST);
-
-        if (empty($moduleinstance->subject_grade_selected)) {
-            return ['success' => false];
-        }
-
-        $info    = explode(':', $moduleinstance->subject_grade_selected);
-        $subject = $info[0];
-        $grade   = $info[1];
-
-        $siyavulaconfig = get_config('filter_siyavula');
-        $clientip       = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-        $token          = siyavula_get_user_token($siyavulaconfig, $clientip);
-        $subjectgradetoc = get_subject_grade_toc($subject, $grade, $token, $USER->id);
-
-        siyavula_update_grades($moduleinstance, $USER->id, $subjectgradetoc);
-
-        return ['success' => true];
-    }
-
-    /**
-     * Return definition for update_grades.
-     */
-    public static function update_grades_returns() {
-        return new external_single_structure([
-            'success' => new external_value(PARAM_BOOL, 'Whether the grade update succeeded'),
-        ]);
-    }
-
-    /**
      * Parameter definition for update_section_grade.
      */
     public static function update_section_grade_parameters() {

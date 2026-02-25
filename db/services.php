@@ -25,14 +25,6 @@
 defined('MOODLE_INTERNAL') || die();
 
 $functions = [
-    'mod_siyavula_update_grades' => [
-        'classname'     => 'mod_siyavula_external',
-        'methodname'    => 'update_grades',
-        'description'   => 'Fetch current TOC mastery from Siyavula and write it to the Moodle grade book for the logged-in user. Called from the browser after each question submission.',
-        'type'          => 'write',
-        'ajax'          => true,
-        'loginrequired' => true,
-    ],
     'mod_siyavula_update_section_grade' => [
         'classname'     => 'mod_siyavula_external',
         'methodname'    => 'update_section_grade',
