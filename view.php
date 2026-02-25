@@ -174,6 +174,14 @@ if ($moduleinstance->subject_grade_selected && $sectionid == null) {
 // If selected one section, render it.
 if ($sectionid != null && $activityid === null && $responseid === null) {
 
+    // Ensure the grade structure exists for this instance. This is normally created
+    // on the first throttled TOC sync, but a student may navigate directly to a
+    // section URL without ever visiting the TOC (e.g. via a bookmark). Without the
+    // grade structure the per-answer AJAX updates silently do nothing.
+    if (!$DB->record_exists('siyavula_grade_nodes', ['instanceid' => $moduleinstance->id])) {
+        siyavula_update_grades($moduleinstance, $USER->id, $subjectgradetoc);
+    }
+
     $activitytype = 'practice';
 
     // Current version is Moodle 4.0 or higher use the event types. Otherwise use the older versions.
