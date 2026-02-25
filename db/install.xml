@@ -35,5 +35,23 @@
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
       </KEYS>
     </TABLE>
+    <TABLE NAME="siyavula_grade_nodes" COMMENT="Maps Siyavula TOC nodes to their Moodle grade_category or grade_item IDs.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="instanceid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="FK to siyavula.id"/>
+        <FIELD NAME="nodetype" TYPE="char" LENGTH="16" NOTNULL="true" COMMENT="activity_cat | chapter_cat | section_item"/>
+        <FIELD NAME="siyavulaid" TYPE="char" LENGTH="64" NOTNULL="false" COMMENT="Siyavula chapter or section ID; null for the activity-level category"/>
+        <FIELD NAME="moodleid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="grade_category.id for *_cat rows; grade_item.id for section_item rows"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_instanceid" TYPE="foreign" FIELDS="instanceid" REFTABLE="siyavula" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="instanceid_nodetype_siyavulaid" UNIQUE="true" FIELDS="instanceid, nodetype, siyavulaid"/>
+      </INDEXES>
+    </TABLE>
   </TABLES>
 </XMLDB>

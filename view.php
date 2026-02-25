@@ -100,6 +100,13 @@ $subjectgradetoc  = get_subject_grade_toc($subject, $grade, $token);
 // If selected one grade.
 if ($moduleinstance->subject_grade_selected && $sectionid == null) {
 
+    // Sync grades from Siyavula at most once per 30 minutes per activity per session.
+    $synckey = 'siyavula_toc_sync_' . $moduleinstance->id;
+    if (!isset($SESSION->$synckey) || (time() - $SESSION->$synckey) > 1800) {
+        siyavula_update_grades($moduleinstance, $USER->id, $subjectgradetoc);
+        $SESSION->$synckey = time();
+    }
+
     echo html_writer::start_tag('div', ['class' => 'tabs-toc']);
 
     foreach ($subjectgradetoc->chapters ?? [] as $k => $chapter) {
@@ -170,7 +177,6 @@ if ($sectionid != null && $activityid === null && $responseid === null) {
     $token = siyavula_get_user_token($siyavulaconfig, $clientip);
     $usertoken = siyavula_get_external_user_token($siyavulaconfig, $clientip, $token);
     $activitytype = 'practice';
-    siyavula_update_grades($moduleinstance, $USER->id, $subjectgradetoc);
 
     // Current version is Moodle 4.0 or higher use the event types. Otherwise use the older versions.
     if ($CFG->version >= 2022041912) {
@@ -191,6 +197,7 @@ if ($sectionid != null && $activityid === null && $responseid === null) {
     $config->baseurl = $baseurl;
     $config->token = $token;
     $config->usertoken = $usertoken->token;
+    $config->cmid = $coursemodule->id;
 
     echo $renderer->render_practice_activity($activityrenderable);
     echo $renderer->render_assets([$activityrenderable], $config);
