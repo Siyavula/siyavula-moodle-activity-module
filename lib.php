@@ -330,18 +330,17 @@ function siyavula_grade_item_update($moduleinstance, $mastery) {
     ];
     if ($reset) {
         $params['reset'] = true;
+        return grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula',
+                            $moduleinstance->id, 0, null, $params);
     }
-    $overallgrades = $reset ? null : [
-        $mastery->userid => (object)[
-            'userid'   => $mastery->userid,
-            'rawgrade' => $mastery->rawgrade,
-        ],
-    ];
-    $result = grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula',
-                           $moduleinstance->id, 0, $overallgrades, $params);
+
+    // Ensure the itemnumber=0 grade item exists before writing section grades,
+    // so Moodle's grade infrastructure is in place for the category hierarchy.
+    grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula',
+                 $moduleinstance->id, 0, null, $params);
 
     // ── Grade category hierarchy: write section mastery to leaf grade_items ──
-    if (!$reset && !empty($mastery->chapters)) {
+    if (!empty($mastery->chapters)) {
         $nodemap = siyavula_ensure_grade_structure($moduleinstance, $mastery->chapters);
 
         foreach ($mastery->chapters as $chapter) {
@@ -366,6 +365,39 @@ function siyavula_grade_item_update($moduleinstance, $mastery) {
         // freshly written section values.
         grade_regrade_final_grades($moduleinstance->course);
     }
+
+    // ── Write the Moodle-aggregated activity category finalgrade to itemnumber=0
+    // so the course total and completion tracking use the same value as the
+    // User Report. This matches the approach in update_section_grade(). ──
+    $overallrawgrade = $mastery->rawgrade;
+    $actnode = $DB->get_record('siyavula_grade_nodes', [
+        'instanceid' => $moduleinstance->id,
+        'nodetype'   => 'activity_cat',
+    ]);
+    if ($actnode) {
+        $catitem = grade_item::fetch([
+            'itemtype'     => 'category',
+            'iteminstance' => $actnode->moodleid,
+            'courseid'     => $moduleinstance->course,
+        ]);
+        if ($catitem) {
+            $catfinalgrade = $DB->get_field('grade_grades', 'finalgrade',
+                ['itemid' => $catitem->id, 'userid' => $mastery->userid]);
+            if (!is_null($catfinalgrade)) {
+                $overallrawgrade = $catfinalgrade;
+            }
+        }
+    }
+
+    $overallgrades = [
+        $mastery->userid => (object)[
+            'userid'   => $mastery->userid,
+            'rawgrade' => $overallrawgrade,
+        ],
+    ];
+    $result = grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula',
+                           $moduleinstance->id, 0, $overallgrades, $params);
+    siyavula_set_completion($moduleinstance, $mastery->userid, $overallrawgrade);
 
     return $result;
 }
@@ -445,7 +477,8 @@ function siyavula_update_grades($siyavula, $userid, $subjectgradetoc) {
     require_once($CFG->libdir . '/gradelib.php');
 
     $mastery = siyavula_get_toc_user_mastery($siyavula, $subjectgradetoc, $userid);
-    siyavula_set_completion($siyavula, $userid, $mastery->rawgrade);
+    // Completion is set inside siyavula_grade_item_update() using the
+    // Moodle-aggregated category finalgrade, not the simple API mean.
     return siyavula_grade_item_update($siyavula, $mastery);
 }
 
