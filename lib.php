@@ -366,10 +366,38 @@ function siyavula_grade_item_update($moduleinstance, $mastery) {
         grade_regrade_final_grades($moduleinstance->course);
     }
 
-    // ── Write the Moodle-aggregated activity category finalgrade to itemnumber=0
+    // Sync the Moodle-aggregated activity category finalgrade to itemnumber=0
     // so the course total and completion tracking use the same value as the
-    // User Report. This matches the approach in update_section_grade(). ──
-    $overallrawgrade = $mastery->rawgrade;
+    // User Report. The API mean ($mastery->rawgrade) is used as a fallback
+    // when the category grade doesn't exist yet.
+    siyavula_sync_module_grade($moduleinstance, $mastery->userid, $mastery->rawgrade);
+
+    return GRADE_UPDATE_OK;
+}
+
+/**
+ * Syncs the Moodle-aggregated activity category grade to the module's
+ * itemnumber=0 grade item and updates completion state.
+ *
+ * Both siyavula_grade_item_update() (ToC path) and update_section_grade()
+ * (AJAX path) need this identical logic after section grades are written.
+ *
+ * @param stdClass  $moduleinstance  Row from the siyavula table.
+ * @param int       $userid          Moodle user ID.
+ * @param float|null $fallbackgrade  Grade to use if the category finalgrade
+ *                                   is not yet available (ToC path passes the
+ *                                   API mean here; AJAX path passes null).
+ * @return float|null  The grade written to itemnumber=0, or null if nothing was written.
+ */
+function siyavula_sync_module_grade(stdClass $moduleinstance, int $userid, float $fallbackgrade = null): ?float {
+    global $CFG, $DB;
+    if (!function_exists('grade_update')) {
+        require_once($CFG->libdir . '/gradelib.php');
+    }
+    require_once($CFG->libdir . '/grade/grade_item.php');
+
+    $overallgrade = $fallbackgrade;
+
     $actnode = $DB->get_record('siyavula_grade_nodes', [
         'instanceid' => $moduleinstance->id,
         'nodetype'   => 'activity_cat',
@@ -382,24 +410,32 @@ function siyavula_grade_item_update($moduleinstance, $mastery) {
         ]);
         if ($catitem) {
             $catfinalgrade = $DB->get_field('grade_grades', 'finalgrade',
-                ['itemid' => $catitem->id, 'userid' => $mastery->userid]);
+                ['itemid' => $catitem->id, 'userid' => $userid]);
             if (!is_null($catfinalgrade)) {
-                $overallrawgrade = $catfinalgrade;
+                $overallgrade = $catfinalgrade;
             }
         }
     }
 
-    $overallgrades = [
-        $mastery->userid => (object)[
-            'userid'   => $mastery->userid,
-            'rawgrade' => $overallrawgrade,
-        ],
-    ];
-    $result = grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula',
-                           $moduleinstance->id, 0, $overallgrades, $params);
-    siyavula_set_completion($moduleinstance, $mastery->userid, $overallrawgrade);
+    if (is_null($overallgrade)) {
+        return null;
+    }
 
-    return $result;
+    $params = [
+        'itemname'  => $moduleinstance->name,
+        'idnumber'  => $moduleinstance->id,
+        'gradetype' => GRADE_TYPE_VALUE,
+        'grademax'  => 100,
+        'grademin'  => 0,
+    ];
+    $grades = [
+        $userid => (object)['userid' => $userid, 'rawgrade' => $overallgrade],
+    ];
+    grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula',
+                 $moduleinstance->id, 0, $grades, $params);
+    siyavula_set_completion($moduleinstance, $userid, $overallgrade);
+
+    return (float)$overallgrade;
 }
 
 /**

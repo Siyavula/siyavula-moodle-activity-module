@@ -99,41 +99,9 @@ class mod_siyavula_external extends external_api {
         // only recomputes grade items that actually changed.
         grade_regrade_final_grades($moduleinstance->course);
 
-        // Push the recomputed overall mastery to itemnumber=0 so the course total
-        // and completion tracking stay current without waiting for a full TOC sync.
-        // The activity category finalgrade is freshly computed by grade_regrade_final_grades above.
-        $actnode = $DB->get_record('siyavula_grade_nodes', [
-            'instanceid' => $moduleinstance->id,
-            'nodetype'   => 'activity_cat',
-        ]);
-        if ($actnode) {
-            $catitem = grade_item::fetch([
-                'itemtype'     => 'category',
-                'iteminstance' => $actnode->moodleid,
-                'courseid'     => $moduleinstance->course,
-            ]);
-            if ($catitem) {
-                // Query the DB directly to bypass Moodle's in-memory grade_grade
-                // object cache, which may hold a stale value from before the regrade.
-                $catfinalgrade = $DB->get_field('grade_grades', 'finalgrade',
-                    ['itemid' => $catitem->id, 'userid' => $USER->id]);
-                if (!is_null($catfinalgrade)) {
-                    $overallparams = [
-                        'itemname' => $moduleinstance->name,
-                        'idnumber' => $moduleinstance->id,
-                        'gradetype' => GRADE_TYPE_VALUE,
-                        'grademax'  => 100,
-                        'grademin'  => 0,
-                    ];
-                    $overallgrades = [
-                        $USER->id => (object)['userid' => $USER->id, 'rawgrade' => $catfinalgrade],
-                    ];
-                    grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula',
-                                 $moduleinstance->id, 0, $overallgrades, $overallparams);
-                    siyavula_set_completion($moduleinstance, $USER->id, $catfinalgrade);
-                }
-            }
-        }
+        // Sync the Moodle-aggregated activity category finalgrade to itemnumber=0
+        // so the course total and completion tracking stay current.
+        siyavula_sync_module_grade($moduleinstance, $USER->id);
 
         return ['success' => true];
     }
