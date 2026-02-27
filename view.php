@@ -100,12 +100,12 @@ $subjectgradetoc  = get_subject_grade_toc($subject, $grade, $token);
 // If selected one grade.
 if ($moduleinstance->subject_grade_selected && $sectionid == null) {
 
-    // Sync grades from Siyavula at most once per 30 minutes per activity per session.
+    // Sync grades from Siyavula at most once per hour per activity per session.
     $synckey = 'siyavula_toc_sync_' . $moduleinstance->id;
-    // if (!isset($SESSION->$synckey) || (time() - $SESSION->$synckey) > 1800) {
-    //     siyavula_update_grades($moduleinstance, $USER->id, $subjectgradetoc);
-    //     $SESSION->$synckey = time();
-    // }
+    if (!isset($SESSION->$synckey) || (time() - $SESSION->$synckey) > 3600) {
+        siyavula_update_grades($moduleinstance, $USER->id, $subjectgradetoc);
+        $SESSION->$synckey = time();
+    }
     siyavula_update_grades($moduleinstance, $USER->id, $subjectgradetoc);
 
     echo html_writer::start_tag('div', ['class' => 'tabs-toc']);
