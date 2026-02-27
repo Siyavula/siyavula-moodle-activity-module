@@ -343,27 +343,61 @@ function siyavula_grade_item_update($moduleinstance, $mastery) {
     if (!empty($mastery->chapters)) {
         $nodemap = siyavula_ensure_grade_structure($moduleinstance, $mastery->chapters);
 
+        // Collect all section item IDs so we can batch-fetch grade_items and
+        // current grades in two queries instead of 2N individual fetches.
+        $secitems = []; // itemid => target mastery
         foreach ($mastery->chapters as $chapter) {
             foreach ($chapter['sections'] as $section) {
                 $seckey = 'section_item:' . $section['id'];
                 $itemid = $nodemap[$seckey] ?? null;
-                if ($itemid === null) {
-                    continue;
-                }
-
-                // update_final_grade() is the correct Moodle API for writing to
-                // manual grade items. It sets both rawgrade and finalgrade and
-                // marks the item so Moodle's aggregation pipeline picks it up.
-                $gi = grade_item::fetch(['id' => $itemid]);
-                if ($gi) {
-                    $gi->update_final_grade($mastery->userid, $section['mastery'], 'mod/siyavula');
+                if ($itemid !== null) {
+                    $secitems[$itemid] = (float)$section['mastery'];
                 }
             }
         }
 
-        // Recompute chapter and activity category totals immediately from the
-        // freshly written section values.
-        grade_regrade_final_grades($moduleinstance->course);
+        if (!empty($secitems)) {
+            $itemids = array_keys($secitems);
+
+            // Batch-fetch all section grade_item objects in one query.
+            list($insql, $inparams) = $DB->get_in_or_equal($itemids, SQL_PARAMS_NAMED);
+            $girows = $DB->get_records_select('grade_items', "id $insql", $inparams);
+            $gradeitems = [];
+            foreach ($girows as $row) {
+                $gradeitems[$row->id] = new grade_item($row, false);
+            }
+
+            // Batch-fetch current finalgrades so we can skip unchanged sections.
+            $inparams['userid'] = $mastery->userid;
+            $currentgrades = $DB->get_records_select(
+                'grade_grades',
+                "itemid $insql AND userid = :userid",
+                $inparams,
+                '',
+                'itemid, finalgrade'
+            );
+
+            $anychanged = false;
+            foreach ($secitems as $itemid => $targetmastery) {
+                // Skip if the grade hasn't changed (avoids unnecessary DB writes
+                // and event triggers on sections the student hasn't touched).
+                $current = $currentgrades[$itemid]->finalgrade ?? null;
+                if ($current !== null && abs((float)$current - $targetmastery) < 0.001) {
+                    continue;
+                }
+
+                $gi = $gradeitems[$itemid] ?? null;
+                if ($gi) {
+                    $gi->update_final_grade($mastery->userid, $targetmastery, 'mod/siyavula');
+                    $anychanged = true;
+                }
+            }
+
+            // Only regrade if at least one section was actually updated.
+            if ($anychanged) {
+                grade_regrade_final_grades($moduleinstance->course);
+            }
+        }
     }
 
     // Sync the Moodle-aggregated activity category finalgrade to itemnumber=0
