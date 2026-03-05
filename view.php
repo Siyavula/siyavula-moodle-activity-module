@@ -106,7 +106,6 @@ if ($moduleinstance->subject_grade_selected && $sectionid == null) {
         siyavula_update_grades($moduleinstance, $USER->id, $subjectgradetoc);
         $SESSION->$synckey = time();
     }
-    siyavula_update_grades($moduleinstance, $USER->id, $subjectgradetoc);
 
     // Build template context from API data.
     $toccontext = ['chapters' => []];
