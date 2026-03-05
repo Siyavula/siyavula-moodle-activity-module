@@ -244,7 +244,10 @@ function siyavula_ensure_grade_structure(stdClass $moduleinstance, array $chapte
                 $gi             = new grade_item();
                 $gi->courseid   = $moduleinstance->course;
                 $gi->categoryid = $chapcatid;
-                $gi->itemtype   = 'manual';
+                $gi->itemtype     = 'mod';
+                $gi->itemmodule   = 'siyavula';
+                $gi->iteminstance = $moduleinstance->id;
+                $gi->itemnumber   = (int)$section['id'];
                 $gi->itemname   = $section['title'];
                 // idnumber allows external lookup without querying the mapping table.
                 $gi->idnumber   = 'siyavula_' . $moduleinstance->id . '_sec_' . $section['id'];

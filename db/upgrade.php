@@ -60,5 +60,28 @@ function xmldb_siyavula_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2025101701, 'siyavula');
     }
 
+    if ($oldversion < 2026030501) {
+        // Convert existing section grade items from 'manual' to 'mod' type
+        // so they display as Siyavula items in the gradebook.
+        $sql = "SELECT gn.id AS nodeid, gn.moodleid, gn.instanceid, gn.siyavulaid
+                  FROM {siyavula_grade_nodes} gn
+                  JOIN {grade_items} gi ON gi.id = gn.moodleid
+                 WHERE gn.nodetype = 'section_item'
+                   AND gi.itemtype = 'manual'";
+        $rows = $DB->get_records_sql($sql);
+
+        foreach ($rows as $row) {
+            $DB->update_record('grade_items', (object)[
+                'id'           => $row->moodleid,
+                'itemtype'     => 'mod',
+                'itemmodule'   => 'siyavula',
+                'iteminstance' => $row->instanceid,
+                'itemnumber'   => (int)$row->siyavulaid,
+            ]);
+        }
+
+        upgrade_mod_savepoint(true, 2026030501, 'siyavula');
+    }
+
     return true;
 }
