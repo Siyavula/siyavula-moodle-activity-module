@@ -92,16 +92,17 @@ class mod_siyavula_external extends external_api {
             return ['success' => false];
         }
 
-        $gradeitem->update_final_grade($USER->id, $mastery, 'mod/siyavula');
-        // Do not pass $userid to grade_regrade_final_grades: when $userid is set the function
-        // expects $updated_item (the fast raw-grade regrade path) and throws without it.
-        // update_final_grade() marks parent categories as needsupdate=1, so this regrade
-        // only recomputes grade items that actually changed.
-        grade_regrade_final_grades($moduleinstance->course);
+        if (siyavula_update_section_grade_if_changed($gradeitem, $USER->id, $mastery)) {
+            // Do not pass $userid to grade_regrade_final_grades: when $userid is set
+            // the function expects $updated_item (the fast raw-grade regrade path)
+            // and throws without it. update_final_grade() marks parent categories as
+            // needsupdate=1, so this regrade only recomputes items that changed.
+            grade_regrade_final_grades($moduleinstance->course);
 
-        // Sync the Moodle-aggregated activity category finalgrade to itemnumber=0
-        // so the course total and completion tracking stay current.
-        siyavula_sync_module_grade($moduleinstance, $USER->id);
+            // Sync the Moodle-aggregated activity category finalgrade to itemnumber=0
+            // so the course total and completion tracking stay current.
+            siyavula_sync_module_grade($moduleinstance, $USER->id);
+        }
 
         return ['success' => true];
     }

@@ -379,16 +379,14 @@ function siyavula_grade_item_update($moduleinstance, $mastery) {
 
             $anychanged = false;
             foreach ($secitems as $itemid => $targetmastery) {
-                // Skip if the grade hasn't changed (avoids unnecessary DB writes
-                // and event triggers on sections the student hasn't touched).
-                $current = $currentgrades[$itemid]->finalgrade ?? null;
-                if ($current !== null && abs((float)$current - $targetmastery) < 0.001) {
+                $gi = $gradeitems[$itemid] ?? null;
+                if (!$gi) {
                     continue;
                 }
-
-                $gi = $gradeitems[$itemid] ?? null;
-                if ($gi) {
-                    $gi->update_final_grade($mastery->userid, $targetmastery, 'mod/siyavula');
+                $current = isset($currentgrades[$itemid])
+                    ? (($currentgrades[$itemid]->finalgrade !== null) ? (float)$currentgrades[$itemid]->finalgrade : null)
+                    : null;
+                if (siyavula_update_section_grade_if_changed($gi, $mastery->userid, $targetmastery, $current)) {
                     $anychanged = true;
                 }
             }
@@ -407,6 +405,42 @@ function siyavula_grade_item_update($moduleinstance, $mastery) {
     siyavula_sync_module_grade($moduleinstance, $mastery->userid, $mastery->rawgrade);
 
     return GRADE_UPDATE_OK;
+}
+
+/**
+ * Check whether a section grade has changed and write it if so.
+ *
+ * Centralises the "skip if unchanged" comparison so the bulk (ToC) and
+ * single-section (AJAX) paths cannot diverge.
+ *
+ * @param grade_item  $gradeitem     The section grade item.
+ * @param int         $userid        Moodle user ID.
+ * @param float       $mastery       Target mastery (0–100).
+ * @param float|null  $currentgrade  Pre-fetched current finalgrade, or null to auto-fetch.
+ * @return bool  Whether the grade was actually written.
+ */
+function siyavula_update_section_grade_if_changed(
+    grade_item $gradeitem,
+    int $userid,
+    float $mastery,
+    ?float $currentgrade = null
+): bool {
+    global $DB;
+
+    if ($currentgrade === null) {
+        $fetched = $DB->get_field('grade_grades', 'finalgrade', [
+            'itemid' => $gradeitem->id,
+            'userid' => $userid,
+        ]);
+        $currentgrade = ($fetched !== false && $fetched !== null) ? (float)$fetched : null;
+    }
+
+    if ($currentgrade !== null && abs($currentgrade - $mastery) < 0.001) {
+        return false;
+    }
+
+    $gradeitem->update_final_grade($userid, $mastery, 'mod/siyavula');
+    return true;
 }
 
 /**
