@@ -1,0 +1,72 @@
+{{!
+    @template mod_siyavula/toc
+
+    Table of contents for a Siyavula activity, showing chapters and sections
+    with mastery progress bars and star overlays.
+
+    Context variables required:
+    - chapters[] : array of chapter objects
+      - index    : int, used for radio-button IDs
+      - id       : int, Siyavula chapter ID
+      - title    : string
+      - mastery  : int 0-100
+      - sections[] : array of section objects
+        - id      : int, Siyavula section ID
+        - title   : string
+        - mastery : int 0-100
+        - url     : string, link to practice view
+}}
+<svg style="display:none;">
+  <defs>
+    <symbol id="mastery-stars-chapter" class="mastery">
+      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd"/>
+      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd" transform="translate(24)"/>
+      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd" transform="translate(48)"/>
+      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd" transform="translate(72)"/>
+      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd" transform="translate(96)"/>
+    </symbol>
+    <symbol id="mastery-stars-section" class="mastery">
+      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="white" fill-rule="evenodd"/>
+      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="white" fill-rule="evenodd" transform="translate(24)"/>
+      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="white" fill-rule="evenodd" transform="translate(48)"/>
+      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="white" fill-rule="evenodd" transform="translate(72)"/>
+      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="white" fill-rule="evenodd" transform="translate(96)"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="tabs-toc">
+  {{#chapters}}
+  <div class="tab-toc" data-cid="{{id}}">
+    <input class="toc" type="radio" id="tab-{{index}}" name="tocs">
+    <label class="tab-label-toc" for="tab-{{index}}">
+      <span class="chapter-title">{{title}}</span>
+      <div class="sv-toc__chapter-mastery">
+        <div class="sv-toc__section-mastery">
+          <div class="mastery">
+            <progress class="mastery-bg" value="{{mastery}}" max="100" data-text="{{mastery}}%"></progress>
+            <svg><use xlink:href="#mastery-stars-chapter"/></svg>
+          </div>
+        </div>
+      </div>
+    </label>
+    <div class="tab-content-toc">
+      {{#sections}}
+      <div class="item-toc" data-sid="{{id}}">
+        <a href="{{url}}">{{title}}</a>
+        <div class="sv-toc__section-mastery">
+          <div class="mastery">
+            <progress class="mastery-bg" value="{{mastery}}" max="100" data-text="{{mastery}}%"></progress>
+            <svg><use xlink:href="#mastery-stars-section"/></svg>
+          </div>
+        </div>
+      </div>
+      {{/sections}}
+    </div>
+  </div>
+  {{/chapters}}
+  <div class="tab-toc">
+    <input type="radio" id="rd00" name="tocs">
+    <label class="tab-close-toc" for="rd00">Close others &times;</label>
+  </div>
+</div>

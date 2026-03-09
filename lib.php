@@ -96,6 +96,7 @@ function siyavula_delete_instance($id) {
         return false;
     }
 
+    siyavula_grade_item_delete($exists);
     $DB->delete_records('siyavula', array('id' => $id));
 
     return true;
@@ -140,63 +141,433 @@ function siyavula_scale_used_anywhere($scaleid) {
 }
 
 /**
+ * Creates or retrieves the grade_category/grade_item hierarchy for one activity instance.
+ *
+ * Hierarchy:
+ *   grade_category  "[name] – Chapters"   aggregation=MEAN  (activity level)
+ *     grade_category  "Chapter 1: ..."    aggregation=MEAN  (per chapter)
+ *       grade_item    "Section 1.1: ..."  type=VALUE        (per section)
+ *       grade_item    "Section 1.2: ..."
+ *     grade_category  "Chapter 2: ..."
+ *       ...
+ *
+ * The activity-level category total item has aggregationcoef=0 so it does not
+ * contribute to the course total (only the mod grade_item at itemnumber=0 does).
+ *
+ * Idempotent: safe to call on every grade update request.
+ *
+ * @param stdClass $moduleinstance  Row from the siyavula table.
+ * @param array    $chapters        From $mastery->chapters — see siyavula_get_toc_user_mastery().
+ * @return array   Nodemap keyed by 'activity_cat', 'chapter_cat:{id}', 'section_item:{id}'
+ *                 with Moodle grade_category.id or grade_item.id as values.
+ */
+function siyavula_ensure_grade_structure(stdClass $moduleinstance, array $chapters): array {
+    global $CFG, $DB;
+    require_once($CFG->libdir . '/grade/grade_category.php');
+    require_once($CFG->libdir . '/grade/grade_item.php');
+
+    // Load all saved node mappings for this instance.
+    $rows    = $DB->get_records('siyavula_grade_nodes', ['instanceid' => $moduleinstance->id]);
+    $nodemap = [];
+    foreach ($rows as $row) {
+        $key = $row->nodetype . (!empty($row->siyavulaid) ? ':' . $row->siyavulaid : '');
+        $nodemap[$key] = (int)$row->moodleid;
+    }
+
+    $now = time();
+
+    // ── 1. Activity-level grade category ──────────────────────────────────────
+    if (!isset($nodemap['activity_cat'])) {
+        $actcat              = new grade_category();
+        $actcat->courseid    = $moduleinstance->course;
+        $actcat->fullname    = $moduleinstance->name . ' – Chapters';
+        $actcat->aggregation = GRADE_AGGREGATE_MEAN;
+        $actcat->insert('mod/siyavula');
+
+        $DB->insert_record('siyavula_grade_nodes', (object)[
+            'instanceid'   => $moduleinstance->id,
+            'nodetype'     => 'activity_cat',
+            'siyavulaid'   => null,
+            'moodleid'     => $actcat->id,
+            'timecreated'  => $now,
+            'timemodified' => $now,
+        ]);
+        $nodemap['activity_cat'] = $actcat->id;
+    }
+    $actcatid = $nodemap['activity_cat'];
+
+    // Always ensure the activity category total item is excluded from the
+    // course total. weightoverride=1 is required for Moodle to apply
+    // aggregationcoef2=0 under Natural aggregation; without it Moodle
+    // auto-calculates the weight from grademax and this category total
+    // double-counts against the mod grade item (itemnumber=0).
+    $catitem = grade_item::fetch([
+        'itemtype'     => 'category',
+        'iteminstance' => $actcatid,
+        'courseid'     => $moduleinstance->course,
+    ]);
+    if ($catitem && (!$catitem->weightoverride || $catitem->aggregationcoef2 != 0)) {
+        $catitem->aggregationcoef  = 0;
+        $catitem->aggregationcoef2 = 0;
+        $catitem->weightoverride   = 1;
+        $catitem->update();
+    }
+
+    // ── 2. Chapter categories and section grade items ─────────────────────────
+    foreach ($chapters as $chapter) {
+        $chapkey = 'chapter_cat:' . $chapter['id'];
+
+        if (!isset($nodemap[$chapkey])) {
+            $chapcat              = new grade_category();
+            $chapcat->courseid    = $moduleinstance->course;
+            $chapcat->fullname    = $chapter['title'];
+            $chapcat->aggregation = GRADE_AGGREGATE_MEAN;
+            $chapcat->parent      = $actcatid;
+            $chapcat->insert('mod/siyavula');
+
+            $DB->insert_record('siyavula_grade_nodes', (object)[
+                'instanceid'   => $moduleinstance->id,
+                'nodetype'     => 'chapter_cat',
+                'siyavulaid'   => (string)$chapter['id'],
+                'moodleid'     => $chapcat->id,
+                'timecreated'  => $now,
+                'timemodified' => $now,
+            ]);
+            $nodemap[$chapkey] = $chapcat->id;
+        }
+        $chapcatid = $nodemap[$chapkey];
+
+        foreach ($chapter['sections'] as $section) {
+            $seckey = 'section_item:' . $section['id'];
+
+            if (!isset($nodemap[$seckey])) {
+                $gi             = new grade_item();
+                $gi->courseid   = $moduleinstance->course;
+                $gi->categoryid = $chapcatid;
+                $gi->itemtype     = 'mod';
+                $gi->itemmodule   = 'siyavula';
+                $gi->iteminstance = $moduleinstance->id;
+                $gi->itemnumber   = (int)$section['id'];
+                $gi->itemname   = $section['title'];
+                // idnumber allows external lookup without querying the mapping table.
+                $gi->idnumber   = 'siyavula_' . $moduleinstance->id . '_sec_' . $section['id'];
+                $gi->gradetype  = GRADE_TYPE_VALUE;
+                $gi->grademax   = 100;
+                $gi->grademin   = 0;
+                $gi->insert('mod/siyavula');
+
+                $DB->insert_record('siyavula_grade_nodes', (object)[
+                    'instanceid'   => $moduleinstance->id,
+                    'nodetype'     => 'section_item',
+                    'siyavulaid'   => (string)$section['id'],
+                    'moodleid'     => $gi->id,
+                    'timecreated'  => $now,
+                    'timemodified' => $now,
+                ]);
+                $nodemap[$seckey] = $gi->id;
+            }
+        }
+    }
+
+    return $nodemap;
+}
+
+/**
  * Creates or updates grade item for the given mod_siyavula instance.
+ *
+ * Writes the overall mastery to the module's grade item (itemnumber=0) for
+ * course-total and completion-tracking purposes.
+ *
+ * Also creates/updates the grade_category hierarchy (activity → chapters →
+ * sections) and writes per-section mastery to the leaf grade_items.  Moodle's
+ * category aggregation then computes chapter and activity-level totals
+ * automatically.
  *
  * Needed by {@see grade_update_mod_grades()}.
  *
  * @param stdClass $moduleinstance Instance object with extra cmidnumber and modname property.
- * @param bool $reset Reset grades in the gradebook.
- * @return void.
+ * @param stdClass|string $mastery  Mastery object from siyavula_get_toc_user_mastery(),
+ *                                  or the string 'reset' to reset grades.
+ * @return int  grade_update() return code.
  */
 function siyavula_grade_item_update($moduleinstance, $mastery) {
     global $CFG, $DB;
     if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
-        require_once($CFG->libdir.'/gradelib.php');
+        require_once($CFG->libdir . '/gradelib.php');
+    }
+    require_once($CFG->libdir . '/grade/grade_item.php');
+
+    $reset = ($mastery === 'reset');
+
+    // ── Persist overall mastery in siyavula_grades (legacy cache, unchanged) ──
+    if (!$reset) {
+        $siyavulagrades = 'siyavula_grades';
+        $record = $DB->get_record($siyavulagrades, [
+            'subject' => $mastery->subject,
+            'grade'   => $mastery->grade,
+            'userid'  => $mastery->userid,
+        ]);
+        if ($record) {
+            $record->mastery      = $mastery->rawgrade;
+            $record->timemodified = time();
+            $DB->update_record($siyavulagrades, $record);
+        } else {
+            $record               = new stdClass();
+            $record->subject      = $mastery->subject;
+            $record->grade        = $mastery->grade;
+            $record->userid       = $mastery->userid;
+            $record->mastery      = $mastery->rawgrade;
+            $record->timecreated  = time();
+            $record->timemodified = time();
+            $DB->insert_record($siyavulagrades, $record);
+        }
     }
 
-    $params = array('itemname' => $moduleinstance->name, 'idnumber' => $moduleinstance->id);
-
-    if ($mastery === 'reset') {
+    // ── itemnumber=0: module-linked grade item for course total + completion ──
+    $params = [
+        'itemname' => $moduleinstance->name,
+        'idnumber' => $moduleinstance->id,
+        'gradetype' => GRADE_TYPE_VALUE,
+        'grademax'  => 100,
+        'grademin'  => 0,
+    ];
+    if ($reset) {
         $params['reset'] = true;
-        $mastery = null;
+        return grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula',
+                            $moduleinstance->id, 0, null, $params);
     }
-    $params['gradetype'] = GRADE_TYPE_VALUE; // If is type_none, then not saved nothing, so left for now VALUE.
 
-    $siyavulagrades = 'siyavula_grades';
-    $record = $DB->get_record($siyavulagrades, ['subject' => $mastery->subject,
-        'grade' => $mastery->grade, 'userid' => $mastery->userid]);
+    // Ensure the itemnumber=0 grade item exists before writing section grades,
+    // so Moodle's grade infrastructure is in place for the category hierarchy.
+    grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula',
+                 $moduleinstance->id, 0, null, $params);
 
-    if ($record) {
-        // If the record exist, update.
-        $record->mastery = $mastery->rawgrade;
-        $record->timemodified = time();
-        $DB->update_record($siyavulagrades, $record);
-    } else {
-        $record = new stdClass();
-        // If not exist, insert.
-        $record->subject      = $mastery->subject;
-        $record->grade        = $mastery->grade;
-        $record->userid       = $mastery->userid;
-        $record->mastery      = $mastery->rawgrade;
-        $record->timemodified = time();
-        $record->timecreated  = time();
-        $DB->insert_record($siyavulagrades, $record);
+    // ── Grade category hierarchy: write section mastery to leaf grade_items ──
+    if (!empty($mastery->chapters)) {
+        $nodemap = siyavula_ensure_grade_structure($moduleinstance, $mastery->chapters);
+
+        // Collect all section item IDs so we can batch-fetch grade_items and
+        // current grades in two queries instead of 2N individual fetches.
+        $secitems = []; // itemid => target mastery
+        foreach ($mastery->chapters as $chapter) {
+            foreach ($chapter['sections'] as $section) {
+                $seckey = 'section_item:' . $section['id'];
+                $itemid = $nodemap[$seckey] ?? null;
+                if ($itemid !== null) {
+                    $secitems[$itemid] = (float)$section['mastery'];
+                }
+            }
+        }
+
+        if (!empty($secitems)) {
+            $itemids = array_keys($secitems);
+
+            // Batch-fetch all section grade_item objects in one query.
+            list($insql, $inparams) = $DB->get_in_or_equal($itemids, SQL_PARAMS_NAMED);
+            $girows = $DB->get_records_select('grade_items', "id $insql", $inparams);
+            $gradeitems = [];
+            foreach ($girows as $row) {
+                $gradeitems[$row->id] = new grade_item($row, false);
+            }
+
+            // Batch-fetch current finalgrades so we can skip unchanged sections.
+            $inparams['userid'] = $mastery->userid;
+            $currentgrades = $DB->get_records_select(
+                'grade_grades',
+                "itemid $insql AND userid = :userid",
+                $inparams,
+                '',
+                'itemid, finalgrade'
+            );
+
+            $anychanged = false;
+            foreach ($secitems as $itemid => $targetmastery) {
+                $gi = $gradeitems[$itemid] ?? null;
+                if (!$gi) {
+                    continue;
+                }
+                $current = isset($currentgrades[$itemid])
+                    ? (($currentgrades[$itemid]->finalgrade !== null) ? (float)$currentgrades[$itemid]->finalgrade : null)
+                    : null;
+                if (siyavula_update_section_grade_if_changed($gi, $mastery->userid, $targetmastery, $current)) {
+                    $anychanged = true;
+                }
+            }
+
+            // Only regrade if at least one section was actually updated.
+            if ($anychanged) {
+                grade_regrade_final_grades($moduleinstance->course);
+            }
+        }
     }
-    return grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula', $moduleinstance->id, 0, $mastery, $params);
+
+    // Sync the Moodle-aggregated activity category finalgrade to itemnumber=0
+    // so the course total and completion tracking use the same value as the
+    // User Report. The API mean ($mastery->rawgrade) is used as a fallback
+    // when the category grade doesn't exist yet.
+    siyavula_sync_module_grade($moduleinstance, $mastery->userid, $mastery->rawgrade);
+
+    return GRADE_UPDATE_OK;
+}
+
+/**
+ * Check whether a section grade has changed and write it if so.
+ *
+ * Centralises the "skip if unchanged" comparison so the bulk (ToC) and
+ * single-section (AJAX) paths cannot diverge.
+ *
+ * @param grade_item  $gradeitem     The section grade item.
+ * @param int         $userid        Moodle user ID.
+ * @param float       $mastery       Target mastery (0–100).
+ * @param float|null  $currentgrade  Pre-fetched current finalgrade, or null to auto-fetch.
+ * @return bool  Whether the grade was actually written.
+ */
+function siyavula_update_section_grade_if_changed(
+    grade_item $gradeitem,
+    int $userid,
+    float $mastery,
+    ?float $currentgrade = null
+): bool {
+    global $DB;
+
+    if ($currentgrade === null) {
+        $fetched = $DB->get_field('grade_grades', 'finalgrade', [
+            'itemid' => $gradeitem->id,
+            'userid' => $userid,
+        ]);
+        $currentgrade = ($fetched !== false && $fetched !== null) ? (float)$fetched : null;
+    }
+
+    if ($currentgrade !== null && abs($currentgrade - $mastery) < 0.001) {
+        return false;
+    }
+
+    $gradeitem->update_final_grade($userid, $mastery, 'mod/siyavula');
+    return true;
+}
+
+/**
+ * Syncs the Moodle-aggregated activity category grade to the module's
+ * itemnumber=0 grade item and updates completion state.
+ *
+ * Both siyavula_grade_item_update() (ToC path) and update_section_grade()
+ * (AJAX path) need this identical logic after section grades are written.
+ *
+ * @param stdClass  $moduleinstance  Row from the siyavula table.
+ * @param int       $userid          Moodle user ID.
+ * @param float|null $fallbackgrade  Grade to use if the category finalgrade
+ *                                   is not yet available (ToC path passes the
+ *                                   API mean here; AJAX path passes null).
+ * @return float|null  The grade written to itemnumber=0, or null if nothing was written.
+ */
+function siyavula_sync_module_grade(stdClass $moduleinstance, int $userid, float $fallbackgrade = null): ?float {
+    global $CFG, $DB;
+    if (!function_exists('grade_update')) {
+        require_once($CFG->libdir . '/gradelib.php');
+    }
+    require_once($CFG->libdir . '/grade/grade_item.php');
+
+    $overallgrade = $fallbackgrade;
+
+    $actnode = $DB->get_record('siyavula_grade_nodes', [
+        'instanceid' => $moduleinstance->id,
+        'nodetype'   => 'activity_cat',
+    ]);
+    if ($actnode) {
+        $catitem = grade_item::fetch([
+            'itemtype'     => 'category',
+            'iteminstance' => $actnode->moodleid,
+            'courseid'     => $moduleinstance->course,
+        ]);
+        if ($catitem) {
+            $catfinalgrade = $DB->get_field('grade_grades', 'finalgrade',
+                ['itemid' => $catitem->id, 'userid' => $userid]);
+            if (!is_null($catfinalgrade)) {
+                $overallgrade = $catfinalgrade;
+            }
+        }
+    }
+
+    if (is_null($overallgrade)) {
+        return null;
+    }
+
+    $params = [
+        'itemname'  => $moduleinstance->name,
+        'idnumber'  => $moduleinstance->id,
+        'gradetype' => GRADE_TYPE_VALUE,
+        'grademax'  => 100,
+        'grademin'  => 0,
+    ];
+    $grades = [
+        $userid => (object)['userid' => $userid, 'rawgrade' => $overallgrade],
+    ];
+    grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula',
+                 $moduleinstance->id, 0, $grades, $params);
+    siyavula_set_completion($moduleinstance, $userid, $overallgrade);
+
+    return (float)$overallgrade;
 }
 
 /**
  * Delete grade item for given mod_siyavula instance.
  *
+ * Removes the entire grade_category hierarchy (sections, chapter categories,
+ * activity category) as well as the module's itemnumber=0 grade item, and
+ * cleans up the siyavula_grade_nodes mapping table.
+ *
  * @param stdClass $moduleinstance Instance object.
- * @return grade_item.
+ * @return int grade_update() return code for the itemnumber=0 deletion.
  */
 function siyavula_grade_item_delete($moduleinstance) {
-    global $CFG;
-    require_once($CFG->libdir.'/gradelib.php');
+    global $CFG, $DB;
+    require_once($CFG->libdir . '/gradelib.php');
+    require_once($CFG->libdir . '/grade/grade_category.php');
+    require_once($CFG->libdir . '/grade/grade_item.php');
 
-    return grade_update('/mod/siyavula', $moduleinstance->course, 'mod', 'siyavula',
-                        $moduleinstance->id, 0, null, array('deleted' => 1));
+    // Delete section grade_items first (leaves of the hierarchy).
+    $secnodes = $DB->get_records('siyavula_grade_nodes', [
+        'instanceid' => $moduleinstance->id,
+        'nodetype'   => 'section_item',
+    ]);
+    foreach ($secnodes as $node) {
+        $gi = grade_item::fetch(['id' => $node->moodleid]);
+        if ($gi) {
+            $gi->delete('mod/siyavula');
+        }
+    }
+
+    // Delete chapter categories (their auto-created total grade_item is removed
+    // automatically by Moodle when the category is deleted).
+    $chapnodes = $DB->get_records('siyavula_grade_nodes', [
+        'instanceid' => $moduleinstance->id,
+        'nodetype'   => 'chapter_cat',
+    ]);
+    foreach ($chapnodes as $node) {
+        $cat = grade_category::fetch(['id' => $node->moodleid]);
+        if ($cat) {
+            $cat->delete('mod/siyavula');
+        }
+    }
+
+    // Delete the activity-level category.
+    $actnodes = $DB->get_records('siyavula_grade_nodes', [
+        'instanceid' => $moduleinstance->id,
+        'nodetype'   => 'activity_cat',
+    ]);
+    foreach ($actnodes as $node) {
+        $cat = grade_category::fetch(['id' => $node->moodleid]);
+        if ($cat) {
+            $cat->delete('mod/siyavula');
+        }
+    }
+
+    // Clean up the node mapping table.
+    $DB->delete_records('siyavula_grade_nodes', ['instanceid' => $moduleinstance->id]);
+
+    // Delete the module's own itemnumber=0 grade item.
+    return grade_update('mod/siyavula', $moduleinstance->course, 'mod', 'siyavula',
+                        $moduleinstance->id, 0, null, ['deleted' => 1]);
 }
 
 /**
@@ -206,13 +577,15 @@ function siyavula_grade_item_delete($moduleinstance) {
  *
  * @param stdClass $moduleinstance Instance object with extra cmidnumber and modname property.
  * @param int $userid Update grade of specific user only, 0 means all participants.
+ * @param stdClass $subjectgradetoc TOC data from the Siyavula API.
  */
 function siyavula_update_grades($siyavula, $userid, $subjectgradetoc) {
     global $CFG, $DB;
-    require_once($CFG->libdir.'/gradelib.php');
+    require_once($CFG->libdir . '/gradelib.php');
 
     $mastery = siyavula_get_toc_user_mastery($siyavula, $subjectgradetoc, $userid);
-    siyavula_set_completion($siyavula, $userid, $mastery->rawgrade);
+    // Completion is set inside siyavula_grade_item_update() using the
+    // Moodle-aggregated category finalgrade, not the simple API mean.
     return siyavula_grade_item_update($siyavula, $mastery);
 }
 
@@ -256,31 +629,53 @@ function siyavula_set_completion($siyavula, $userid, $mastery = 0) {
 /**
  * Return grade for given user or all users.
  *
- * @global stdClass
- * @global object
- * @param int $subject_grade_toc
- * @param int $userid optional user id, 0 means all users
- * @return array array of grades, false if none
+ * Returns overall mastery (rawgrade) as well as a full per-chapter and
+ * per-section breakdown (chapters array) for use by siyavula_grade_item_update().
+ *
+ * @param stdClass $moduleinstance  Activity instance row.
+ * @param stdClass $subjectgradetoc TOC data from the Siyavula API.
+ * @param int      $userid          Moodle user ID.
+ * @return stdClass  Object with userid, grade, subject, rawgrade, and chapters.
  */
 function siyavula_get_toc_user_mastery($moduleinstance, $subjectgradetoc, $userid) {
     global $CFG, $DB;
 
-    $info               = explode(':', $moduleinstance->subject_grade_selected);
-    $subject            = $info[0];
-    $grade              = $info[1];
-    $summastery = 0;
-    $chapters = is_array($subjectgradetoc->chapters ?? null) ? $subjectgradetoc->chapters : [];
-    foreach ($chapters as $k => $chapter) {
-        $summastery += $chapter->mastery;
-    }
-    $countchapters = count($chapters);
-    $totalgrade = $countchapters > 0 ? $summastery / $countchapters : 0;
+    $info    = explode(':', $moduleinstance->subject_grade_selected);
+    $subject = $info[0];
+    $grade   = $info[1];
 
-    $mastery = new stdClass();
+    $chapters    = is_array($subjectgradetoc->chapters ?? null) ? $subjectgradetoc->chapters : [];
+    $summastery  = 0;
+    $chapterdata = [];
+
+    foreach ($chapters as $chapter) {
+        $summastery += $chapter->mastery;
+
+        $sections = [];
+        foreach ($chapter->sections ?? [] as $section) {
+            $sections[] = [
+                'id'      => (string)$section->id,
+                'title'   => $section->title,
+                'mastery' => (float)$section->mastery,
+            ];
+        }
+        $chapterdata[] = [
+            'id'       => (string)$chapter->id,
+            'title'    => $chapter->title,
+            'mastery'  => (float)$chapter->mastery,
+            'sections' => $sections,
+        ];
+    }
+
+    $countchapters = count($chapters);
+    $totalgrade    = $countchapters > 0 ? $summastery / $countchapters : 0;
+
+    $mastery           = new stdClass();
     $mastery->userid   = $userid;
     $mastery->grade    = $grade;
     $mastery->subject  = $subject;
     $mastery->rawgrade = $totalgrade;
+    $mastery->chapters = $chapterdata;
     return $mastery;
 }
 

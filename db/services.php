@@ -15,21 +15,22 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version and other meta-data are defined here.
+ * External web service declarations for mod_siyavula.
  *
  * @package     mod_siyavula
- * @copyright   2025 Siyavula
+ * @copyright   2021 Solutto Consulting
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'mod_siyavula';
-$plugin->version =  2026030501;
-$plugin->requires = 2019111809;
-$plugin->maturity = MATURITY_STABLE;
-$plugin->supported = [311, 502];
-$plugin->release = '2.0.3';
-$plugin->dependencies = [
-    'filter_siyavula' => 2026022501,
+$functions = [
+    'mod_siyavula_update_section_grade' => [
+        'classname'     => 'mod_siyavula_external',
+        'methodname'    => 'update_section_grade',
+        'description'   => 'Write mastery for a single section to the Moodle grade book without fetching the full TOC.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'loginrequired' => true,
+    ],
 ];

@@ -100,77 +100,49 @@ $subjectgradetoc  = get_subject_grade_toc($subject, $grade, $token);
 // If selected one grade.
 if ($moduleinstance->subject_grade_selected && $sectionid == null) {
 
-    echo html_writer::start_tag('div', ['class' => 'tabs-toc']);
-
-    foreach ($subjectgradetoc->chapters ?? [] as $k => $chapter) {
-        echo html_writer::start_tag('div', ['class' => 'tab-toc', 'data-cid' => $chapter->id]);
-        echo    html_writer::empty_tag('input', ['class' => 'toc', 'type' => 'radio', 'id' => $k, 'name' => "tocs"]);
-        echo    html_writer::start_tag('label', ['class' => 'tab-label-toc', 'for' => $k]);
-        echo    '<span class="chapter-title">'. $chapter->title.'</span>';
-        echo '<div class="sv-toc__chapter-mastery">
-              <div class="sv-toc__section-mastery">
-                <svg style="display:none;">
-                  <defs>
-                    <symbol id="mastery-stars-chapter" class="mastery">
-                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd"/>
-                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd" transform="translate(24)"/>
-                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd" transform="translate(48)"/>
-                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd" transform="translate(72)"/>
-                      <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="#d9eef3" fill-rule="evenodd"  transform="translate(96)"/>
-                    </symbol>
-                  </defs>
-                </svg>
-                <div class="mastery">
-                  <progress class="mastery-bg" id="chapter-mastery" value="'.$chapter->mastery.'" max="100" data-text="'.$chapter->mastery.'%"></progress>
-                  <svg><use xlink:href="#mastery-stars-chapter"/></svg>
-                </div>
-              </div>
-            </div>';
-        echo    html_writer::end_tag('label');
-        echo    html_writer::start_tag('div', ['class' => 'tab-content-toc']);
-        foreach ($chapter->sections as $section) {
-            echo html_writer::start_tag('div', ['class' => 'item-toc', 'data-sid' => $section->id]);
-            $url = new moodle_url('/mod/siyavula/view.php', ['id' => $coursemodule->id, 'sid' => $section->id]);
-            echo  html_writer::link($url, $section->title);
-            echo '<div class="sv-toc__section-mastery">
-                    <svg style="display:none;">
-                      <defs>
-                        <symbol id="mastery-stars-section" class="mastery">
-                          <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="white" fill-rule="evenodd"/>
-                          <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="white" fill-rule="evenodd" transform="translate(24)"/>
-                          <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="white" fill-rule="evenodd" transform="translate(48)"/>
-                          <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="white" fill-rule="evenodd" transform="translate(72)"/>
-                          <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z M0 0 h24 v24 h-24 v-24" fill="white" fill-rule="evenodd"  transform="translate(96)"/>
-                        </symbol>
-                      </defs>
-                    </svg>
-                    <div class="mastery">
-                      <progress class="mastery-bg" id="section-mastery" value="'.$section->mastery.'" max="100" data-text="'.$section->mastery.'%"></progress>
-                      <svg><use xlink:href="#mastery-stars-section"/></svg>
-                    </div>
-                  </div>';
-            echo html_writer::end_tag('div');
-        }
-        echo    html_writer::end_tag('div');
-
-        echo html_writer::end_tag('div');
+    // Sync grades from Siyavula at most once per hour per activity per session.
+    $synckey = 'siyavula_toc_sync_' . $moduleinstance->id;
+    if (!isset($SESSION->$synckey) || (time() - $SESSION->$synckey) > 3600) {
+        siyavula_update_grades($moduleinstance, $USER->id, $subjectgradetoc);
+        $SESSION->$synckey = time();
     }
-    echo html_writer::start_tag('div', ['class' => 'tab-toc']);
-    echo    html_writer::empty_tag('input', ['type' => 'radio', 'id' => "rd00", 'name' => "tocs"]);
-    echo    html_writer::start_tag('label', ['class' => 'tab-close-toc', 'for' => "rd00"]);
-    echo        "Close others &times;";
-    echo    html_writer::end_tag('label');
-    echo html_writer::end_tag('div');
-    echo html_writer::end_tag('div');
+
+    // Build template context from API data.
+    $toccontext = ['chapters' => []];
+    foreach ($subjectgradetoc->chapters ?? [] as $k => $chapter) {
+        $sections = [];
+        foreach ($chapter->sections as $section) {
+            $sections[] = [
+                'id'      => $section->id,
+                'title'   => $section->title,
+                'mastery' => round($section->mastery),
+                'url'     => (new moodle_url('/mod/siyavula/view.php',
+                             ['id' => $coursemodule->id, 'sid' => $section->id]))->out(false),
+            ];
+        }
+        $toccontext['chapters'][] = [
+            'index'    => $k,
+            'id'       => $chapter->id,
+            'title'    => $chapter->title,
+            'mastery'  => round($chapter->mastery),
+            'sections' => $sections,
+        ];
+    }
+    echo $OUTPUT->render_from_template('mod_siyavula/toc', $toccontext);
 }
 
 // If selected one section, render it.
 if ($sectionid != null && $activityid === null && $responseid === null) {
 
-    $token = siyavula_get_user_token($siyavulaconfig, $clientip);
-    $usertoken = siyavula_get_external_user_token($siyavulaconfig, $clientip, $token);
+    // Ensure the grade structure exists for this instance. This is normally created
+    // on the first throttled TOC sync, but a student may navigate directly to a
+    // section URL without ever visiting the TOC (e.g. via a bookmark). Without the
+    // grade structure the per-answer AJAX updates silently do nothing.
+    if (!$DB->record_exists('siyavula_grade_nodes', ['instanceid' => $moduleinstance->id])) {
+        siyavula_update_grades($moduleinstance, $USER->id, $subjectgradetoc);
+    }
+
     $activitytype = 'practice';
-    siyavula_update_grades($moduleinstance, $USER->id, $subjectgradetoc);
 
     // Current version is Moodle 4.0 or higher use the event types. Otherwise use the older versions.
     if ($CFG->version >= 2022041912) {
@@ -191,6 +163,7 @@ if ($sectionid != null && $activityid === null && $responseid === null) {
     $config->baseurl = $baseurl;
     $config->token = $token;
     $config->usertoken = $usertoken->token;
+    $config->cmid = $coursemodule->id;
 
     echo $renderer->render_practice_activity($activityrenderable);
     echo $renderer->render_assets([$activityrenderable], $config);
